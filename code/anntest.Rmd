@@ -1,0 +1,594 @@
+---
+title: "anntest"
+author: "Dominic Cugliari"
+date: "2023-06-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+```{r}
+library(tidyverse)
+library(readr)
+library(neuralnet)
+library(Ecdat)
+library(keras)
+```
+
+Load all of the Phantoms
+
+```{r}
+img1 <- read.csv("raw_data/Reference1.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+img1
+img1 %>% image()
+
+img2 <- read.csv("raw_data/Reference2.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+img2
+img2 %>% image()
+
+img3 <- read.csv("raw_data/Reference3.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+img3
+img3 %>% image()
+
+img4 <- read.csv("raw_data/Reference4.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+img4
+img4 %>% image()
+
+```
+
+Load all of the sinograms
+
+```{r}
+sino1 <- read.csv("raw_data/sinogram1.csv")
+sino1 <- select(sino1, X..0.707..0.703.:X.0.703.0.707.)
+sino1 <- as.matrix(sino)
+sino1
+image(sino1)
+
+
+sino2 <- read.csv("raw_data/sinogram2.csv")
+sino2 <- select(sino2, X..0.707..0.703.:X.0.703.0.707.)
+sino2 <- as.matrix(sino2)
+sino2
+image(sino2)
+
+sino3 <- read.csv("raw_data/sinogram3.csv")
+sino3 <- select(sino3, X..0.707..0.703.:X.0.703.0.707.)
+sino3 <- as.matrix(sino3)
+sino3
+image(sino3)
+
+sino4 <- read.csv("raw_data/sinogram4.csv")
+sino4 <- select(sino4, X..0.707..0.703.:X.0.703.0.707.)
+sino4 <- as.matrix(sino4)
+sino4
+image(sino4)
+```
+
+Load Filtered Back Projections using Hamming 1
+
+```{r}
+FBP1a <- read.csv("raw_data/backProjection1a.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP1a %>% image()
+
+FBP2a <- read.csv("raw_data/backProjection2a.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP2a %>% image()
+
+FBP3a <- read.csv("raw_data/backProjection3a.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP3a %>% image()
+
+FBP4a <- read.csv("raw_data/backProjection4a.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP4a %>% image()
+```
+
+Load Filtered Back Projection using Ramp
+
+```{r}
+FBP1b <- read.csv("raw_data/backProjection1c.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP1b %>% image()
+
+FBP2b <- read.csv("raw_data/backProjection2c.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP2b %>% image()
+
+FBP3b <- read.csv("raw_data/backProjection3c.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP3b %>% image()
+
+FBP4b <- read.csv("raw_data/backProjection4c.csv")%>%
+  select(, V1:V257)%>%
+  as.matrix()
+FBP4b %>% image()
+```
+Create the bias matrix
+
+```{r}
+bias <- matrix(-1, nrow = 257, ncol = 257)
+bias
+```
+
+
+Pick first pixel
+```{r}
+FBP1av <- FBP1a[1,1]
+
+FBP1bv <- FBP1b[1,1]
+
+img1v <- img1[1,1]
+
+biasv <- bias[1,1]
+                                        
+```
+
+
+Create data frame 1
+```{r}
+test1 <- data.frame(img1v, FBP1av, FBP1bv, biasv)
+
+  
+
+test1
+```
+Create neural net
+```{r}
+nn <- neuralnet(formula = img1v ~ FBP1av + FBP1bv + biasv,
+          data = test1,
+          hidden = 2,
+          stepmax = 1e+06,
+          )
+nn
+```
+Pull the generalized weights
+
+```{r}
+weight1 <- nn$weights
+weight1
+```
+
+Pick pixel 2
+```{r}
+FBP1av2 <- FBP1a[2,1]
+
+FBP1bv2 <- FBP1b[2,1]
+
+img1v2 <- img1[2,1]
+
+biasv2 <- bias[2,1]
+                                        
+```
+
+
+Create data frame 2
+```{r}
+test2 <- data.frame(img1v2, FBP1av2, FBP1bv2, biasv2)
+
+  
+
+test2
+```
+    
+Create new neural net
+```{r}
+nn2 <- neuralnet(formula = img1v2 ~ FBP1av2 + FBP1bv2 + biasv2,
+          data = test2,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight1
+          )
+nn2
+```
+
+
+Pull weight 2
+
+```{r}
+weight2 <- nn2$weights
+weight2
+```
+
+Pick pixel 3
+```{r}
+FBP1av3 <- FBP1a[3,1]
+
+FBP1bv3 <- FBP1b[3,1]
+
+img1v3 <- img1[3,1]
+
+biasv3 <- bias[3,1]
+                                        
+```
+
+
+Create data frame 3
+```{r}
+test3 <- data.frame(img1v3, FBP1av3, FBP1bv3, biasv3)
+
+  
+
+test3
+```
+    
+Create neural net 3
+```{r}
+nn3 <- neuralnet(formula = img1v3 ~ FBP1av3 + FBP1bv3 + biasv3,
+          data = test3,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight2
+          )
+nn3
+```
+
+
+Pull weight 3
+
+```{r}
+weight3 <- nn3$weights
+weight3
+```
+
+Pick pixel 4
+```{r}
+FBP1av4 <- FBP1a[4,1]
+
+FBP1bv4 <- FBP1b[4,1]
+
+img1v4 <- img1[4,1]
+
+biasv4 <- bias[4,1]
+                                        
+```
+
+
+Create data frame 4
+```{r}
+test4 <- data.frame(img1v4, FBP1av4, FBP1bv4, biasv4)
+
+  
+
+test4
+```
+    
+Create new neural net 4
+```{r}
+nn4 <- neuralnet(formula = img1v4 ~ FBP1av4 + FBP1bv4 + biasv4,
+          data = test4,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight3
+          )
+nn4
+```
+
+```{r}
+weight1
+weight2
+weight3
+```
+
+
+Pull weight 4
+
+```{r}
+weight4 <- nn4$weights
+weight4
+```
+
+Pick pixel 5
+```{r}
+FBP1av5 <- FBP1a[5,1]
+
+FBP1bv5 <- FBP1b[5,1]
+
+img1v5 <- img1[5,1]
+
+biasv5 <- bias[5,1]
+                                        
+```
+
+
+Create data frame 5
+```{r}
+test5 <- data.frame(img1v5, FBP1av5, FBP1bv5, biasv5)
+
+  
+
+test5
+```
+    
+Create new neural net
+```{r}
+nn5 <- neuralnet(formula = img1v5 ~ FBP1av5 + FBP1bv5 + biasv5,
+          data = test5,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight4
+          )
+nn5
+```
+
+
+
+Pull weight 5
+
+```{r}
+weight5 <- nn5$weights
+weight5
+```
+
+Pick pixel 6
+```{r}
+FBP1av6 <- FBP1a[6,1]
+
+FBP1bv6 <- FBP1b[6,1]
+
+img1v6 <- img1[6,1]
+
+biasv6 <- bias[6,1]
+                                        
+```
+
+
+Create data frame 6
+```{r}
+test6 <- data.frame(img1v6, FBP1av6, FBP1bv6, biasv6)
+
+  
+
+test6
+```
+    
+Create new neural net
+```{r}
+nn6 <- neuralnet(formula = img1v6 ~ FBP1av6 + FBP1bv6 + biasv6,
+          data = test6,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight5
+          )
+nn6
+```
+
+Pull weight 6
+
+```{r}
+weight6 <- nn6$weights
+weight6
+```
+
+Pick pixel 7
+```{r}
+FBP1av7 <- FBP1a[7,1]
+
+FBP1bv7 <- FBP1b[7,1]
+
+img1v7 <- img1[7,1]
+
+biasv7 <- bias[7,1]
+                                        
+```
+
+
+Create data frame 7
+```{r}
+test7 <- data.frame(img1v7, FBP1av7, FBP1bv7, biasv7)
+
+  
+
+test7
+```
+    
+Create new neural net
+```{r}
+nn7 <- neuralnet(formula = img1v7 ~ FBP1av7 + FBP1bv7 + biasv7,
+          data = test7,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight6
+          )
+nn7
+```
+
+
+Pull weight 7
+```{r}
+weight7 <- nn7$weights
+weight7
+```
+
+Pick pixel 8
+```{r}
+FBP1av8 <- FBP1a[8,1]
+
+FBP1bv8 <- FBP1b[8,1]
+
+img1v8 <- img1[8,1]
+
+biasv8 <- bias[8,1]
+                                        
+```
+
+
+Create data frame 8
+```{r}
+test8 <- data.frame(img1v8, FBP1av8, FBP1bv8, biasv8)
+
+  
+
+test8
+```
+    
+Create new neural net
+```{r}
+nn8 <- neuralnet(formula = img1v8 ~ FBP1av8 + FBP1bv8 + biasv8,
+          data = test8,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight7
+          )
+nn8
+```
+
+
+Pull weight 8
+```{r}
+weight8 <- nn8$weights
+weight8
+```
+
+
+Pick pixel 9
+```{r}
+FBP1av9 <- FBP1a[9,1]
+
+FBP1bv9 <- FBP1b[9,1]
+
+img1v9 <- img1[9,1]
+
+biasv9 <- bias[9,1]
+                                        
+```
+
+
+Create data frame 9
+```{r}
+test9 <- data.frame(img1v9, FBP1av9, FBP1bv9, biasv9)
+
+  
+
+test9
+```
+    
+Create new neural net
+```{r}
+nn9 <- neuralnet(formula = img1v9 ~ FBP1av9 + FBP1bv9 + biasv9,
+          data = test9,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight8
+          )
+nn9
+```
+
+
+Pull weight 9
+```{r}
+weight9 <- nn9$weights
+weight9
+```
+
+
+Pick pixel 10
+```{r}
+FBP1av10 <- FBP1a[10,1]
+
+FBP1bv10 <- FBP1b[10,1]
+
+img1v10 <- img1[10,1]
+
+biasv10 <- bias[10,1]
+                                        
+```
+
+
+Create data frame 10
+```{r}
+test10 <- data.frame(img1v10, FBP1av10, FBP1bv10, biasv10)
+
+  
+
+test10
+```
+    
+Create new neural net
+```{r}
+nn10 <- neuralnet(formula = img1v10 ~ FBP1av10 + FBP1bv10 + biasv10,
+          data = test10,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight9
+          )
+nn10
+```
+
+
+Pull weight 10
+```{r}
+weight10 <- nn10$weights
+weight10
+```
+
+
+Pick pixel 11
+```{r}
+FBP1av11 <- FBP1a[11,1]
+
+FBP1bv11 <- FBP1b[11,1]
+
+img1v11 <- img1[11,1]
+
+biasv11 <- bias[11,1]
+                                        
+```
+
+
+Create data frame 10
+```{r}
+test11 <- data.frame(img1v11, FBP1av11, FBP1bv11, biasv11)
+
+  
+
+test11
+```
+    
+Create new neural net
+```{r}
+nn11 <- neuralnet(formula = img1v11 ~ FBP1av11 + FBP1bv11 + biasv11,
+          data = test11,
+          hidden = 2,
+          stepmax = 1e+06,
+          startweights = weight10
+          )
+nn11
+```
+
+
+Pull weight 10
+```{r}
+weight11 <- nn11$weights
+weight11
+```
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,5 @@
+"0","filt1 <- convolution(sino, m1[1:91,1], 'same')
+"
+"2","Error in convolution(sino, m1[1:91, 1], ""same"") : 
+  the kernel should be a matrix
+"

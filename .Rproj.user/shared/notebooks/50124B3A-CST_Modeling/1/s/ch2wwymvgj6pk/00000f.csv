@@ -1,0 +1,4 @@
+"0","mcoll1 <- 1 # slope of field of view limit 1 from collimator"
+"0","bcoll1 <- 0 # intercept of field of view limit 1 from collimator"
+"0","mcoll2 <- -1 # slope of field of view limit 1 from collimator"
+"0","bcoll1 <- 0 # intercept of field of view limit 1 from collimator"

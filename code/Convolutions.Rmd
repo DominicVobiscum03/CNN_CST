@@ -1,0 +1,189 @@
+---
+title: "Learing CNN in Torch"
+author: "Dominic Cugliari"
+date: "2024-05-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+```{r}
+library(tidymodels)
+library(broom)
+library(torch)
+library(torchaudio)
+library(torchvision)
+library(luz)
+
+```
+
+
+
+We start by creating a simple signal, x, and a simple filter, h. That choice of variable names is not a whim; in signal processing, "h" is the usual symbol denoting the impulse response, a term we’ll get to very soon.
+
+
+```{r}
+x <- torch_arange(start = 1, end = 4) 
+h <- torch_tensor(c(-1, 0, 1))
+```
+
+
+Now – given that we do have torch_conv1d() available – why don’t we call it and see what happens? The way convolution is defined, output length equals input length plus filter length, minus one. Using torch_conv1d(), to obtain length-six output, given a filter of length three, we need to pad it by two on both sides.
+
+In the following code, don’t let the calls to view() distract you – they’re present only due to torch expecting three-dimensional input, with dimensions one and two relating to batch item and channel, as usual.
+
+
+```{r}
+torch_conv1d(
+  x$view(c(1, 1, 4)),
+  h$view(c(1, 1, 3)),
+  padding = 2
+)
+```
+But wait, you’ll be thinking – didn’t we say that what torch_conv1d() computes is cross-correlation, not convolution? Well, R has convolve() – let’s double-check
+
+```{r}
+x_ <- as.numeric(x)
+h_ <- as.numeric(h)
+
+convolve(x_, h_, type = "open")
+```
+For convolution though, y needs to be reversed.
+
+```{r}
+convolve(x_, rev(h_), type = "open")
+```
+
+Let's do the same now with torch.
+
+```{r}
+torch_conv1d(
+  x$view(c(1, 1, 4)),
+  h$flip(1)$view(c(1, 1, 3)),
+  padding = 2
+)
+```
+
+
+
+It looks straightforward: Loop over the input vector, and compute the dot product at every prospective output position. But that would mean calculating many vector products, the more, the longer the input sequence.
+
+Fortunately, there is a better way. Single-dimension (linear) convolution is computed by means of Toeplitz matrices, matrices that have some number of constant diagonals, and values of zero everywhere else. Once the filter has been formulated as a Toeplitz matrix, there is just a single multiplication to be carried out: that of the Toeplitz matrix and the input. And even though the matrix will need to have as many columns as the input has values (otherwise we couldn’t do the multiplication), computational cost is small due to the matrix’s being “nearly empty”.
+
+Here is such a Toeplitz matrix, constructed for our running example:
+
+```{r}
+h <-torch_tensor(
+  rbind(c(-1, 0, 0, 0),
+        c(0, -1, 0, 0),
+        c(1, 0, -1, 0),
+        c(0, 1, 0, -1),
+        c(0, 0, 1, 0),
+        c(0, 0, 0, 1)
+        ))
+h
+```
+
+Let's multiply this to our matrix and see.
+
+```{r}
+h$matmul(x)
+```
+
+We get the same tensor!
+
+
+Now, let’s move on to two dimensions. Conceptually, there is no difference, but actual computation (both “by hand” and using matrices) gets a lot more involved. Thus, we’ll content ourselves with presenting a (generalizeable) part of the manual calculation, and, in the computational part, don’t aim at elucidating every single detail.
+
+
+```{r}
+H0 <- torch_tensor(
+  cbind(
+    c(1, -1, 0, 0),
+    c(0, 1, -1, 0),
+    c(0, 0, 1, -1)
+  )
+)
+
+H1 <- torch_tensor(
+  cbind(
+    c(1, 1, 0, 0),
+    c(0, 1, 1, 0),
+    c(0, 0, 1, 1)
+  )
+)
+
+H2 <- torch_tensor(0)$unsqueeze(1)
+```
+
+
+Next, these three matrices are assembled so as to form a doubly-blocked Toeplitz matrix. Like so:
+
+H0   0
+H1  H0
+H2  H1
+One way of coding this is to (twice) use torch_block_diag() to build up the two non-zero blocks, and concatenate them:
+
+
+
+```{r}
+H <- torch_cat(
+  list(
+    torch_block_diag(list(H0, H0)), torch_zeros(4, 6)
+  )
+) +
+  torch_cat(
+    list(
+      torch_zeros(4, 6),
+      torch_block_diag(list(H1, H1))
+    )
+  )
+
+H
+```
+Our input needs to be flattened into a vector.
+
+```{r}
+x0 <- torch_tensor(c(2, 5, 3)) 
+x1 <- torch_tensor(c(1, 4, 1))
+
+x <- torch_cat(list(x0, x1))
+x
+```
+
+Then we multiply.
+
+
+```{r}
+y <- H$matmul(x)
+y
+```
+
+```{r}
+z <- y$view(c(3,4))
+z
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,7 @@
+"0","df <- data.frame(x = sample_positions, y = as.numeric(x))"
+"0",""
+"0","ggplot(df, aes(x = x, y = y)) +"
+"0","  geom_line() +"
+"0","  xlab(""time"") +"
+"0","  ylab(""amplitude"") +"
+"0","  theme_minimal()"

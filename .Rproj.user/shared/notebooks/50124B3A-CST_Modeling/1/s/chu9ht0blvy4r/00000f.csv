@@ -1,0 +1,2 @@
+"0","wd <- 0.254 # width of inspection volume in z direction"
+"0","wColl <- 0.254 # width of detector collimator slit in z direction"

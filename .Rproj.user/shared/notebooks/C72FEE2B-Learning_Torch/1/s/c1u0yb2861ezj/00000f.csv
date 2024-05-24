@@ -1,0 +1,20 @@
+"0","t1 <- torch_tensor(c(1, 2))"
+"0","t2 <- torch_tensor(c(3, 4))"
+"0",""
+"0","torch_add(t1, t2)"
+"1","torch_tensor
+"
+"1"," 4
+ 6
+[ CPUFloatType{2} ]"
+"1","
+"
+"0","# equivalently"
+"0","t1$add(t2)"
+"1","torch_tensor
+"
+"1"," 4
+ 6
+[ CPUFloatType{2} ]"
+"1","
+"

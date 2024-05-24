@@ -1,0 +1,11 @@
+"0","t3 <- torch_tensor(matrix(1:12, ncol = 3, byrow = TRUE))"
+"0","t3$matmul(t1)"
+"1","torch_tensor
+"
+"1"," 14
+ 32
+ 50
+ 68
+[ CPULongType{4} ]"
+"1","
+"

@@ -1,0 +1,8 @@
+"0","E0 <- 88.04 # Energy of primary gamma-ray of Cd-109 radioisotope in keV"
+"0","moc2 <- 511 # Rest mass energy of electron in keV from NIST                                                    reference--https://physics.nist.gov/cgi-bin/cuu/Value?mec2mev"
+"0","S_Act_mCi <- 75 # Input Cd-109 source activity in mCi"
+"0","mCi_to_Bq <- 37000000 # Conversion factor from mCi to Bq (decays/sec)"
+"0","S_Act <- mCi_to_Bq*S_Act_mCi # Calculate source activity in Bq"
+"0","Ints_88k <- 0.0364 # Intensity of 88 keV gamma-rays in # per decay"
+"0","Em_rate <- Ints_88k*S_Act # Emission rate of 88 keV gamma rays from Cd-109 source"
+"0","r02 <- 0.0794 #classical electron radius squared in barns (1e-24 cm^2) from NIST                                reference--https://physics.nist.gov/cgi-bin/cuu/Value?re"

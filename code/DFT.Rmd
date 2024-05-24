@@ -1,0 +1,259 @@
+---
+title: "Discrete Fourier Transform"
+author: "Dominic Cugliari"
+date: "2024-05-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+The way we set things up, there will be sixty-four samples; the sampling period thus equals N = 64. The content of frequency(), the below helper function used to construct the signal, reflects how we represent the cosine.  Namely: $$y=cos(\frac{2\pi}{N} * kx)$$
+
+Here, $x$ values progress over time and $k$ is the frequency index.
+
+
+```{r}
+library(torch)
+library(ggplot2)
+library(patchwork)
+
+N <- 64
+sample_positions <- 0:(N - 1)
+
+frequency <- function(k, N) {
+  (2 * pi / N) * k
+}
+
+x <- torch_cos(frequency(1, N) * sample_positions)
+```
+
+```{r}
+df <- data.frame(x = sample_positions, y = as.numeric(x))
+
+ggplot(df, aes(x = x, y = y)) +
+  geom_line() +
+  xlab("time") +
+  ylab("amplitude") +
+  theme_minimal()
+```
+
+Now that we have the input signal, torch_fft_fft() computes for us the Fourier coefficients, that is, the importance of the various frequencies present in the signal. The number of frequencies considered will equal the number of sampling points: So 
+ will be of length sixty-four as well.
+
+(In our example, you’ll notice that the second half of coefficients will equal the first in magnitude.2 This is the case for every real-valued signal. In such cases, you could call torch_fft_rfft() instead, which yields “nicer” (in the sense of shorter) vectors to work with. Here though, I want to explain the general case, since that’s what you’ll find done in most expositions on the topic.)
+
+
+Even with the signal being real, the Fourier coefficients are complex numbers. There are four ways to inspect them. The first is to extract the real part:
+```{r}
+Ft <- torch_fft_fft(x)
+real_part <- Ft$real
+as.numeric(real_part) %>% round(5)
+```
+
+
+Only a single coefficient is non-zero, the one at position 1. (We start counting from zero, and may discard the second half, as explained above.)
+
+Now looking at the imaginary part, we find it is zero throughout:
+
+```{r}
+imag_part <- Ft$imag
+as.numeric(imag_part) %>% round(5)
+```
+
+
+At this point we know that there is just a single frequency present in the signal, namely, that at $k=1$. This matches (and it better had to) the way we constructed the signal: namely, as accomplishing a single revolution over the complete sampling period.
+
+Since, in theory, every coefficient could have non-zero real and imaginary parts, often what you’d report is the magnitude (the square root of the sum of squared real and imaginary parts):
+
+```{r}
+magnitude <- torch_abs(Ft)
+as.numeric(magnitude) %>% round(5)
+```
+Finally, there’s the phase, indicating a possible shift of the signal (a pure cosine is unshifted). In torch, we have torch_angle() complementing torch_abs(), but we need to take into account roundoff error here. We know that in each but a single case, the real and imaginary parts are both exactly zero; but due to finite precision in how numbers are presented in a computer, the actual values will often not be zero. Instead, they’ll be very small. If we take one of these “fake non-zeroes” and divide it by another, as happens in the angle calculation, big values can result. To prevent this from happening, our custom implementation rounds both inputs before triggering the division.
+
+```{r}
+phase <- function(Ft, threshold = 1e5) {
+  torch_atan2(
+    torch_abs(torch_round(Ft$imag * threshold)),
+    torch_abs(torch_round(Ft$real * threshold))
+  )
+}
+
+as.numeric(phase(Ft)) %>% round(5)
+```
+
+As expected, there is no shift in the signal.
+
+```{r}
+create_plot <- function(x, y, quantity) {
+  df <- data.frame(
+    x_ = x,
+    y_ = as.numeric(y) %>% round(5)
+  )
+  ggplot(df, aes(x = x_, y = y_)) +
+    geom_col() +
+    xlab("frequency") +
+    ylab(quantity) +
+    theme_minimal()
+}
+
+p_real <- create_plot(
+  sample_positions,
+  real_part,
+  "real part"
+)
+p_imag <- create_plot(
+  sample_positions,
+  imag_part,
+  "imaginary part"
+)
+p_magnitude <- create_plot(
+  sample_positions,
+  magnitude,
+  "magnitude"
+)
+p_phase <- create_plot(
+  sample_positions,
+  phase(Ft),
+  "phase"
+)
+
+p_real + p_imag + p_magnitude + p_phase
+```
+
+
+It’s fair to say that we have no reason to doubt what torch_fft_fft() has done. But with a pure sinusoid like this, we can understand exactly what’s going on by computing the DFT ourselves, by hand. Doing this now will significantly help us later, when we’re writing the code.
+
+
+```{r}
+x <- torch_cos(frequency(4, N) * sample_positions)
+
+plot_ft <- function(x) {
+
+  df <- data.frame(x = sample_positions, y = as.numeric(x))
+  p_signal <- ggplot(df, aes(x = x, y = y)) +
+    geom_line() +
+    xlab("time") +
+    ylab("amplitude") +
+    theme_minimal()
+
+  # in the code, I'm using Ft instead of X because not
+  # all operating systems treat variables as case-sensitive
+  Ft <- torch_fft_fft(x)
+
+  p_real <- create_plot(
+    sample_positions,
+    Ft$real,
+    "real part"
+  )
+  p_imag <- create_plot(
+    sample_positions,
+    Ft$imag,
+    "imaginary part"
+  )
+  p_magnitude <- create_plot(
+    sample_positions,
+    torch_abs(Ft),
+    "magnitude"
+  )
+  p_phase <- create_plot(
+    sample_positions,
+    phase(Ft),
+    "phase"
+  )
+
+  (p_signal | plot_spacer()) /
+    (p_real | p_imag) /
+    (p_magnitude | p_phase)
+}
+
+plot_ft(x)
+```
+
+```{r}
+x <- 3 * torch_sin(frequency(4, N) * sample_positions) +
+  6 * torch_cos(frequency(2, N) * sample_positions) +
+  2 * torch_cos(frequency(8, N) * sample_positions)
+
+plot_ft(x)
+```
+
+
+
+
+We want to project the signal onto each of the basis vectors. In other words, we’ll be computing a bunch of inner products. Logic-wise, nothing changes: The only difference is that in general, it will not be possible to represent the signal in terms of just a few basis vectors, like we did before. Thus, all projections will actually have to be calculated. But isn’t automation of tedious tasks one thing we have computers for?
+
+Let’s start by stating input, output, and central logic of the algorithm to be implemented. As throughout this chapter, we stay in a single dimension. The input, thus, is a one-dimensional tensor, encoding a signal. The output is a one-dimensional vector of Fourier coefficients, of the same length as the input, each holding information about a frequency. The central idea is: To obtain a coefficient, project the signal onto the corresponding basis vector.
+
+To implement that idea, we need to create the basis vectors, and for each one, compute its inner product with the signal. This can be done in a loop. Surprisingly little code is required to accomplish the goal:
+
+```{r}
+dft <- function(x) {
+  n_samples <- length(x)
+
+  n <- torch_arange(0, n_samples - 1)$unsqueeze(1)
+
+  Ft <- torch_complex(
+    torch_zeros(n_samples), torch_zeros(n_samples)
+  )
+
+  for (k in 0:(n_samples - 1)) {
+    w_k <- torch_exp(-1i * 2 * pi / n_samples * k * n)
+    dot <- torch_matmul(w_k, x$to(dtype = torch_cfloat()))
+    Ft[k + 1] <- dot
+  }
+  Ft
+}
+```
+
+
+```{r}
+Ft <- dft(x)
+torch_round(Ft$real) %>% as.numeric()
+torch_round(Ft$imag) %>% as.numeric()
+```
+A more elegant function to do this though could be:
+
+```{r}
+dft_vec <- function(x) {
+  n_samples <- length(x)
+
+  n <- torch_arange(0, n_samples - 1)$unsqueeze(1)
+  k <- torch_arange(0, n_samples - 1)$unsqueeze(2)
+
+  mat_k_m <- torch_exp(-1i * 2 * pi / n_samples * k * n)
+
+  torch_matmul(mat_k_m, x$to(dtype = torch_cfloat()))
+}
+```
+
+```{r}
+Ft <- dft_vec(x)
+torch_round(Ft$real) %>% as.numeric()
+torch_round(Ft$imag) %>% as.numeric()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

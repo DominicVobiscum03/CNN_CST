@@ -1,0 +1,11 @@
+"0","t <- torch_zeros(24)"
+"0","print(t, n = 3)"
+"1","torch_tensor
+"
+"1"," 0
+ 0
+ 0
+... [the output was truncated (use n=-1 to disable)]
+[ CPUFloatType{24} ]"
+"1","
+"

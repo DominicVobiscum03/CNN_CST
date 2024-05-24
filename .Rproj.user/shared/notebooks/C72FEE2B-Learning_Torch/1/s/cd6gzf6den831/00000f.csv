@@ -1,0 +1,11 @@
+"0","torch_tensor(1:5, dtype = torch_float())"
+"1","torch_tensor
+"
+"1"," 1
+ 2
+ 3
+ 4
+ 5
+[ CPUFloatType{5} ]"
+"1","
+"

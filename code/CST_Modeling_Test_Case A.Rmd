@@ -1,0 +1,223 @@
+---
+title: "CST_Modeling"
+author: "Jeff Martin"
+date: "2023-06-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+Import the tidyverse, Matrix and ggplot2 packages
+
+```{r}
+library(tidyverse)
+library(Matrix)
+library(ggplot2)
+```
+
+Define size of image plane
+
+```{r}
+NX <- 128 # number of pixels in x direction
+NZ <- NX # number of pixels in z direction, square space for now
+minx <- 0 # minimum x position in cm
+minz <- 0 # minimum y position in cm
+maxx <- 12.8  # maximum x position in cm
+maxz <- maxx  # maximum z position in cm
+pwidth <- maxx/NX # define pixel width in cm
+```
+
+Define the width of the slice of the object to be imaged in y direction
+
+```{r}
+wd <- 0.254 # width of inspection volume in z direction
+wColl <- 0.254 # width of detector collimator slit in z direction
+```
+
+Define gamma-ray source characteristics
+
+```{r}
+E0 <- 88.04 # Energy of primary gamma-ray of Cd-109 radioisotope in keV
+moc2 <- 511 # Rest mass energy of electron in keV from NIST                                                    reference--https://physics.nist.gov/cgi-bin/cuu/Value?mec2mev
+S_Act_mCi <- 75 # Input Cd-109 source activity in mCi
+mCi_to_Bq <- 37000000 # Conversion factor from mCi to Bq (decays/sec)
+S_Act <- mCi_to_Bq*S_Act_mCi # Calculate source activity in Bq
+Ints_88k <- 0.0364 # Intensity of 88 keV gamma-rays in # per decay
+Em_rate <- Ints_88k*S_Act # Emission rate of 88 keV gamma rays from Cd-109 source
+r02 <- 0.0794 #classical electron radius squared in barns (1e-24 cm^2) from NIST                                reference--https://physics.nist.gov/cgi-bin/cuu/Value?re
+```
+
+Define gamma-ray source geometry
+
+```{r}
+NS <- 8 # number of source (and first detector) locations
+XSspace <- 0.5
+ZSspace <- 0.1
+SourceLoc <- tibble( X = seq( 0, NS-1 ) * XSspace ) #x coordinate of source positions
+SourceLoc$Z <- SourceLoc$X * ZSspace/XSspace #z coordinate of source positions
+
+SourceLoc$Theta <- SourceLoc$Z #Initialize vector in SourceLoc for source angles
+SourceLoc$Theta[ seq(1, NS) ] <- 29.3 #Angle of source positions in degrees
+SourceLoc$Theta[ seq(NS/2+1, NS)] <- 180 - 29.3   #Angle of last 4 source positions in degrees
+SourceDX <- 0.508 # source diameter in X dimension in cm
+SourceDZ <- 0.1 # source thickness in Z dimension in cm
+SourceNX <- 10 # number of source sub-positions in X dimension
+SourceNZ<- 2 # number of source sub-positions in Z dimension
+```
+
+Define number of detectors and their positions.  For initial calculations space the detectors evenly along the x-axis with the source
+
+```{r}
+ndet <- 4 # number of gamma-ray detectors in array
+det_dist <- 1.95e+0 # separation in cm of the first detector from the source and between the remaining detectors in the array
+det_offset <- 3.2 # offset of detector array from detector
+det_x <- t(tibble ( seq(1,ndet)*det_dist + det_offset)) # x dimension of detector array locations
+det_r <- 0.4 # set the radius of the detector face in cm
+```
+
+Define energy bins of gamma-ray detectors from minimum energy of backscattered gamma-ray (180 deg scatter) to incident gamma-ray energy.  For initial calculations space the detectors evenly along the x-axis with the source.  Use a bin width that gives 2 bins for the energy resolution of detector (0.4 keV).
+
+```{r}
+Eres <- 0.4 # gamma-ray detector energy resolution in keV
+chnwidth <- Eres/2 # assign channel width to give 2 channels for energy resolution of detectors
+Emin <- floor(E0/(1+(E0/moc2)*(2))) # set the minimum energy for the detector below E0 back scattered energy
+Emax <- floor(E0)
+nchns <- (Emax-Emin)/chnwidth
+Echn <- tibble ( seq(0,nchns-1)*chnwidth + Emin + chnwidth/2 ) # calculate energy of detector channels
+```
+
+Define field of view set by collimator
+
+```{r}
+mcoll1 <- 1 # slope of field of view limit 1 from collimator
+bcoll1 <- 0 # intercept of field of view limit 1 from collimator
+mcoll2 <- -1 # slope of field of view limit 1 from collimator
+bcoll1 <- 0 # intercept of field of view limit 1 from collimator
+```
+
+Define count times at each position
+
+```{r}
+Count <- tibble( times = seq(0,NS-1) ) #set up dataframe for count times
+# Count$times <- 1800 #set the count times as a default of 30 m (1800 s)
+```
+
+Define object to be imaged
+
+```{r}
+Image_loc <- tibble( loc = (seq(0,NX-1)+0.5
+                              )*pwidth ) #set up data frame for image plane locations
+Count_time <- 35 #set the count times as a default of 1 hr (3600 s)
+# Image_plane <- Matrix (0.00E00, NX, NZ, sparse=TRUE) #initialize the NX by NZ pixel image plane with zeroes
+Image_plane <- matrix (0.00E00, NX, NZ,) #initialize the NX by NZ pixel image plane with zeroes
+Na <- 6.023E+23 # Avogadro number
+
+Al <- data.frame(massdens = 2.7) # mass density of aluminum in g/cm^3 for object
+Al$AW <- 26.98 # atomic weight of aluminum
+Al$Z <- 13 # atomic number of aluminum
+Al$adens <- Al$massdens*Na/Al$AW
+Al$edens <- Al$adens*Al$Z
+
+Image_plane[seq(41,46),seq(35,40)] <- Al$edens # Define left target
+Image_plane[seq(61,66),seq(35,40)] <- Al$edens # Define right target
+
+X <- data.frame(X = (seq(0,NX-1)+0.5
+                              )*pwidth )
+X$Z <- X$X
+
+image( Image_plane )
+```
+
+For each nonzero pixel in image plan compute position (in cm) scattering angle (in degrees), its cosine and the energy E' (in keV) of the scattered gamma ray
+
+```{r}
+Ep <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize scattered gamma-ray energy in a 3D array of image plane for each detector
+Ep_chn <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize scattered gamma-ray energy bin in a 3D array of image plane for each detector
+Int_prob <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize interaction probability in a 3D array of image plane for each detector in (b/Sr)
+Events <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize interaction probability in a 3D array of image plane for each detector in (b/Sr)
+
+for (i in 1:NX){
+  for (j in 1:NZ){
+
+    
+    if (Image_plane[i,j] > 0) {
+      
+      sp_dist <- sqrt(X$X[i]^2 + X$Z[j]^2) # distance from source to pixel in cm
+      p_SA <- X$Z[j]*pwidth^2/sp_dist^3    # solid angle of pixel from source in Sr
+      
+      for (k in 1:ndet){
+
+        pd_dist <- sqrt((det_x[k]-X$X[i])^2 + X$Z[j]^2) # distance from pixel to detector in cm
+        cos_theta <- (X$X[i]*(det_x[k]-X$X[i])-X$Z[j]^2) /                                                               (sp_dist*pd_dist) # cosines of angles between vector from source to
+                                          #  pixel and pixel to detector for scatter angle
+      
+        Ep[i,j,k] <- E0/(1+(E0/moc2)*(1-cos_theta))
+        Ep_chn[i,j,k] <- floor((Ep[i,j,k]-Emin)/chnwidth)+1
+      
+        d_SA <- pi*det_r^2*X$Z[j]/pd_dist^3  # solid angle of detector relative to pixel
+        
+        KN_xs <- (Al$Z*r02/2)*(Ep[i,j,k]/E0)^2*(Ep[i,j,k]/E0 + E0/Ep[i,j,k]                                         - (1-cos_theta^2)) # Klein-Nishina scattering cross section from
+                                      # source through pixel into detector
+        Int_prob[i,j,k] <- pwidth*Al$edens*KN_xs*1e-24*p_SA                                                                  *d_SA*sp_dist/(4*pi*X$Z[j]) # Scattering probability from
+                                      # source through pixel into detector
+        Events[i,j,k] <- Int_prob[i,j,k] * Em_rate*Count_time
+      
+      }
+    }
+  }
+}
+```
+
+Now sum the events from each pixel into each detector energy bin to form a "Scattergram" that represents data the Compton scatter tomography system records from the imaged object.
+
+```{r}
+# Ep <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize scattered gamma-ray energy in a 3D array of image plane for each detector
+# Ep_chn <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize scattered gamma-ray energy bin in a 3D array of image plane for each detector
+# Int_prob <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize interaction probability in a 3D array of image plane for each detector in (b/Sr)
+# Events <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize interaction probability in a 3D array of image plane for each detector in (b/Sr)
+
+ScatGram <- data.frame( Energy = seq(0,nchns-1)*chnwidth + Emin + chnwidth/2)
+
+# chn_counts <- seq(1,nchns)*0 # initiate a vector for the detector channel counts to zero
+
+for (k in 1:ndet){
+  chn_counts <- seq(1,nchns)*0 # initiate a vector for the detector channel counts to zero
+  
+  for (i in 1:NX){
+
+    # sp_dist <- sqrt(X$X[i]^2 + X$Z[j]^2) # distance from source to pixel in cm
+    # p_SA <- X$Z[j]*pwidth^2/sp_dist^3    # solid angle of pixel from source in Sr
+      
+    for (j in 1:NZ){
+      if (Image_plane[i,j] > 0) {
+        chn <- Ep_chn[i,j,k]
+        chn_counts[chn] <- chn_counts[chn] + Events[i,j,k]
+
+        #pd_dist <- sqrt((det_x[k]-X$X[i])^2 + X$Z[j]^2) # distance from pixel to detector in cm
+        #cos_theta <- (X$X[i]*(det_x[k]-X$X[i])-X$Z[j]^2) /                                                               (sp_dist*pd_dist) # cosines of angles between vector from source to
+                                          #  pixel and pixel to detector for scatter angle
+      
+        #Ep[i,j,k] <- E0/(1+(E0/moc2)*(1-cos_theta))
+        #Ep_chn[i,j,k] <- floor((Ep[i,j,k]-Emin)/chnwidth)+1
+      
+        #d_SA <- pi*det_r^2*X$Z[j]/pd_dist^3  # solid angle of detector relative to pixel
+        
+        #KN_xs <- (Al$Z*r02/2)*(Ep[i,j,k]/E0)^2*(Ep[i,j,k]/E0 + E0/Ep[i,j,k]                                         - (1-cos_theta^2)) # Klein-Nishina scattering cross section from
+                                      # source through pixel into detector
+        #Int_prob[i,j,k] <- pwidth*Al$edens*KN_xs*1e-24*p_SA                                                                  *d_SA*sp_dist/(4*pi*X$Z[j]) # Scattering probability from
+                                      # source through pixel into detector
+        #Events[i,j,k] <- Int_prob[i,j,k] * Em_rate*Count$times[k]
+      
+      }
+    }
+  }
+  col <- as.character(det_x[k])
+  ScatGram[col] <- chn_counts
+}
+
+ plot(ScatGram$Energy, ScatGram[,2])
+ 
+```

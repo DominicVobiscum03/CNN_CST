@@ -1,0 +1,209 @@
+---
+title: "annpixeltest"
+author: "Dominic Cugliari"
+date: "2023-06-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+```{r}
+library(tidyverse)
+library(readr)
+library(neuralnet)
+library(Ecdat)
+library(keras)
+library(Matrix)
+library(ggplot2)
+library(binhf)
+library(OpenImageR)
+```
+
+
+
+```{r}
+ogimg <- read_csv("raw_data/annreference.csv")
+ogimg %>% as.matrix()
+NX <- 65 # number of horizontal pixels in digital image
+NZ <- 65
+pixelx = 16 # horizontal pixel position from middle of image 
+pixelz = 16 # vertical pixel position from middle of image
+Test1_sinogram <- read_csv(
+                   'raw_data/annsino.csv')
+nangles <- nrow(Test1_sinogram)
+ndet <- ncol(Test1_sinogram)
+dummy_weight <- tibble(seq(1:ndet) * 0.00e+0)
+dummy_weight %>% as.matrix()
+dummy_weight[ceiling(ndet/2),] <- 0.25
+dummy_weight[ceiling(ndet/2)-1,] <- -.125
+dummy_weight[ceiling(ndet/2)+1,] <- -.125
+angle_step <- 180/(nangles-1)
+dshift <- data.frame( angle = seq(0,nangles-1)*angle_step )
+dshift$pixel <- round( pixelx*cos(pi*dshift$angle/180) +                                    pixelz*sin(pi*dshift$angle/180) )
+sTest1_sinogram <- Test1_sinogram
+```
+
+```{r}
+sTest1_sinogram <- sTest1_sinogram %>%
+  as.matrix()
+sTest1_sinogram <- sTest1_sinogram
+sTest1_sinogram
+sTest1_sinogram %>% image()
+
+```
+
+sum the columns into a vector
+
+```{r}
+for(val in 1:nangles ){
+                        sTest1_sinogram[val,] <- shift(sTest1_sinogram[val,],
+                                                       dshift$pixel[val], dir = "left")
+  }
+f_vector <- colSums(sTest1_sinogram)
+f_vector
+```
+
+```{r}
+z_vector <- rev(f_vector)
+z_vector
+```
+Format the z_vector input and output pixel intensity into a data frame and transpose from rows to columns for use in the neuralnet function
+
+```{r}
+c_data <- as_tibble(c(z_vector, 1.547052362
+))
+ANN_data <- t(c_data) # data frame for training ANN in function neuralnet
+```
+
+Define names of the columns for the data to used by function neuralnet
+
+```{r}
+ANN_names <- c(paste0("z",(as.character(c(seq(1:ndet))))),"o")
+colnames(ANN_data) <- ANN_names
+```
+
+Define the function f to be used in the neuralnet in terms of the column names of the ANN_data data frame, train the neuralnet and plot the output.
+
+```{r}
+f <- as.formula(paste(ANN_names[ndet+1],"~", paste(ANN_names
+                  [!ANN_names %in% "o"], collapse = " + ")))
+
+net.FBP <-neuralnet(f, ANN_data, hidden = 2)
+
+plot (net.FBP, rep = "best")
+
+net.FBP
+
+```
+
+```{r}
+filt_sinoA <- Test1_sinogram
+number_cols <- ncol(Test1_sinogram)
+
+for(val in 1:number_cols){
+                    filt_sinoA[,val] <- convolve(Test1_sinogram[,val], net.FBP$startweights[[1]][[1]][2:94,1], type ="circular")
+}
+
+filt_sinoA %>% 
+  as.matrix()
+
+write_csv(filt_sinoA, "C:/Users/sumloan/Documents/R/anntest/raw_data/filtsino2.csv")
+
+Test1_sinogram %>%
+  as.matrix()%>%
+  image()
+```
+
+
+
+EDIT
+
+```{r}
+filt_sinoA <- Test1_sinogram
+number_cols <- ncol(Test1_sinogram)
+
+for(val in 1:nangles){
+                    filt_sinoA[, val] <- convolve(t(Test1_sinogram[val,]), net.FBP$startweights[[1]][[1]][2:94,1], type ="circular")
+}
+
+filt_sinoA %>% 
+  as.matrix()
+
+write_csv(filt_sinoA, "C:/Users/sumloan/Documents/R/anntest/raw_data/filtsino2.csv")
+
+Test1_sinogram %>%
+  as.matrix()%>%
+  image()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+annreference <- read_csv("raw_data/annreference.csv")%>%
+  as.matrix()
+annreference %>% image()
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

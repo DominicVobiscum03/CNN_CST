@@ -1,0 +1,6 @@
+"0","# Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the"
+"0","# weights from the second layer"
+"0","m1 <- nn$weights[[1]][[1]]"
+"0","m2 <- nn$weights[[1]][[2]]"
+"0","m1 <- m1 %>% as.data.frame()"
+"0","m2 <- m2 %>% as.data.frame()"

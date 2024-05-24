@@ -1,0 +1,506 @@
+---
+title: "Torch Learning"
+author: "Dominic Cugliari"
+date: "2024-05-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+Add the repository
+
+```{r}
+library(torch)
+library(torchaudio)
+library(torchvision)
+library(luz)
+library(tidymodels)
+library(opencv)
+library(broom)
+library(csv)
+```
+
+
+### Tensors
+
+#### What's in a Tensor?
+
+Tensors are just multi-dimensional arrays that are used for deep learning purposes.  We can set a tensor to be a certain thing and then look at it's properties such as it's dimensions, where it lives (on the cpu in this case), it's shape, and it's dtype.
+
+```{r}
+t1 <- torch_tensor(1)
+t1
+t1$dtype
+t1$device
+t1$shape
+```
+We can also change the dtype of a tensor, where it lives (if you have the extra hardware), it's shape, etc...
+
+```{r}
+t2 <- t1$to(dtype = torch_int())
+t2$dtype
+t3 <- t1$view(c(1, 1))
+t3$shape
+```
+
+#### Creating Tensors
+
+
+We can pass long vectors
+
+```{r}
+torch_tensor(1:5)
+```
+
+Torch determines a suitable data type itself with it's highest precision, but we can change if we want to.
+
+```{r}
+torch_tensor(1:5, dtype = torch_float())
+```
+
+We can pass in an R matrix the same way (by column or row).
+
+```{r}
+torch_tensor(matrix(1:9, ncol = 3))
+torch_tensor(matrix(1:9, ncol = 3, byrow = TRUE))
+```
+
+We can do this for higher dimensional data as well.
+
+```{r}
+torch_tensor(array(1:24, dim = c(4, 3, 2)))
+```
+
+We can create tensors of random numbers and of numbers uniformly distributed between 0 and 1.
+
+```{r}
+torch_randn(3, 3)
+torch_rand(3, 3)
+```
+we can create tensors of all ones and zeros as well
+
+```{r}
+torch_zeros(2, 5)
+torch_ones(2, 2)
+```
+
+We can also create identity tensors of any size in 2D.
+
+```{r}
+torch_eye(n = 5)
+```
+
+And we can create diagonal matrices (good for eigenvalues)
+
+```{r}
+torch_diag(c(1, 2, 3))
+```
+
+Let's look at a tensor of an actual data set.
+
+```{r}
+JohnsonJohnson
+```
+
+```{r}
+torch_tensor(JohnsonJohnson)
+unclass(JohnsonJohnson)
+```
+
+
+Let's do another
+
+```{r}
+library(dplyr)
+
+glimpse(Orange)
+#torch_tensor(Orange)
+```
+
+The issue is not because torch can't handle factors as we can see below.  It's actually becuase the data needs to be written into a matrix
+
+```{r}
+f <- factor(c("a", "b", "c"), ordered = TRUE)
+torch_tensor(f)
+```
+
+
+```{r}
+orange_ <- Orange %>% 
+  mutate(Tree = as.numeric(Tree)) %>%
+  as.matrix()
+
+torch_tensor(orange_) %>% print(n = -1)
+```
+
+
+
+#### Operations on Tensors
+
+We can perform all the usual operations on tensors and are invoked with the $ syntax or the commands preloaded.
+
+```{r}
+t1 <- torch_tensor(c(1, 2))
+t2 <- torch_tensor(c(3, 4))
+
+torch_add(t1, t2)
+# equivalently
+t1$add(t2)
+```
+
+This doesn't modify t1 or t2 though, but if we wanted to modify t1 in-place, then we can use this command
+```{r}
+t1$add_(t2)
+t1
+```
+
+
+We can even compute the dot product
+
+```{r}
+t1 <- torch_tensor(1:3)
+t2 <- torch_tensor(4:6)
+t1$dot(t2)
+```
+We can also take the transpose of a matrix.
+
+```{r}
+t1$t()
+```
+
+We can multiply a matrix with a vetor (not worried about the orientation).
+
+```{r}
+t3 <- torch_tensor(matrix(1:12, ncol = 3, byrow = TRUE))
+t3$matmul(t1)
+```
+
+```{r}
+torch_multiply(t1, t2)
+```
+
+
+Perhaps we want to compute the sum of a matrix's values, but does this mean the global sum, sum of rows, or sum of columns?  Let's show all three.
+
+```{r}
+m <- outer(1:3, 1:6)
+
+sum(m)
+apply(m, 1, sum)
+apply(m, 2, sum)
+```
+
+
+```{r}
+t <- torch_outer(torch_tensor(1:3), torch_tensor(1:6))
+t$sum()
+```
+
+We can sum over set dimensions.
+
+
+```{r}
+t$sum(dim = 1)
+t$sum(dim = 2)
+```
+Let's imagine a tensor in which:
+
+- Dimension 1 runs over individuals.
+- Dimension 2 runs over points in time.
+- Dimension 3 runs over features.
+
+
+```{r}
+t <- torch_randn(4, 3, 2)
+t
+```
+To obtain feature averages, indepedently of subject and time, we would collapse dimensions 1 and 2:
+
+```{r}
+t$mean(dim = c(1, 2))
+```
+
+If, on the other hand, we wanted feature averages, but individually per person, we'd do:
+
+```{r}
+t$mean(dim = 2)
+```
+
+#### Accessing Parts of a Tensor
+
+Let's say we want only the first column of a tensor, we can do:
+
+```{r}
+t <- torch_tensor(matrix(1:9, ncol = 3, byrow = TRUE))
+t[1,]
+```
+
+If we specify drop = FALSE, though, dimensionality is preserved:
+
+```{r}
+t[1,,drop = FALSE]
+```
+
+When slicing, there are no singleton dimensions - and thus, no additional considerations to be taken into account:
+
+```{r}
+t <- torch_rand(3, 3, 3)
+t[1:2, 2:3, c(1, 3)]
+```
+
+In sum, thus, indexing and slicing work very much like in R. Now, let’s look at the aforementioned extensions that further enhance usability.
+
+
+One of these extensions concerns accessing the last element in a tensor. Conveniently, in torch, we can use -1 to accomplish that:
+
+
+```{r}
+t <- torch_tensor(matrix(1:4, ncol = 2, byrow = TRUE))
+t[-1, -1]
+```
+
+We can also allow for a step pattern, which is specifed after a second colon.  Here, we request values from every second column between columns one and eight.
+
+```{r}
+t <- torch_tensor(matrix(1:20, ncol = 10, byrow = TRUE))
+t
+t[ , 1:8:2]
+```
+
+
+Finally, sometimes the same code should be able to work with tensors of different dimensionalities. In this case, we can use .. to collectively designate any existing dimensions not explicitly referenced.
+
+For example, say we want to index into the first dimension of whatever tensor is passed, be it a matrix, an array, or some higher-dimensional structure. The following
+
+
+```{r}
+t[1, ..]
+```
+
+will work for all:
+
+```{r}
+t1 <- torch_randn(2, 2)
+t2 <- torch_randn(2, 2, 2)
+t3 <- torch_randn(2, 2, 2, 2)
+t1[1, ..]
+t2[1, ..]
+t3[1, ..]
+```
+
+If we wanted to index into the last dimension instead, we'd write t[..,1].  If we wanted to combine both:
+
+```{r}
+t3[1, .., 2]
+```
+
+#### Reshaping tensors
+
+Say you have 24 elements in a tensor.  Is it a vector of 24, a matrix 2 by 12, a three dimensional tensor [4,3,2]?  We can modify a tensor's shape without juggling around its values using the view() method.  Here is the initial tensor, a vector of length 24.
+
+```{r}
+t <- torch_zeros(24)
+print(t, n = 3)
+```
+
+
+Here is the same vector reshaped to a wide matrix:
+
+```{r}
+t2 <- t$view(c(2,12))
+t2
+```
+
+We have a new tensor, but we can see that it did have to allocate any new storage for its values.
+
+```{r}
+t$storage()$data_ptr()
+t2$storage()$data_ptr()
+```
+
+
+Whenever we ask torch to perform an operation that changes the shape of a tensor, it tries to fulfill the request without allocating new storage for the tensor’s contents. This is possible because the same data – the same bytes, ultimately – can be read in different ways. All that is needed is storage for the metadata.
+
+How does torch do it? Let’s see a concrete example. We start with a 3 x 5 matrix.
+
+
+```{r}
+t <- torch_tensor(matrix(1:15, nrow = 3, byrow = TRUE))
+t
+```
+
+Tensors have a stride() method that tracks, for every dimension, how many elements have to be traversed to arrive at its next element. For the above tensor t, to go to the next row, we have to skip over five elements, while to go to the next column, we need to skip just one:
+
+```{r}
+t$stride()
+```
+
+Now we reshape the tensor so it has five rows and three columns instead. Remember, the data themselves do not change.
+
+```{r}
+t2 <- t$view(c(5, 3))
+t2
+```
+
+
+```{r}
+t2$stride()
+```
+
+
+The same thing occurs if we take the transpose of a matrix.
+
+```{r}
+t3 <- t$t()
+t3
+t$storage()$data_ptr()
+t3$storage()$data_ptr()
+t3$stride()
+```
+
+
+
+Another zero-copy operation is squeeze(), together with its antagonist, unsqueeze().  The latter adds a singleton dimension at the requested position, the former removes it.  For example:
+
+```{r}
+t <- torch_randn(3)
+t
+
+t$unsqueeze(1)
+```
+
+
+Here we added a singleton dimension in front. Alternatively, we could have used t$unsqueeze(2) to add it at the end.
+
+
+
+Now, will that zero-copy technique ever fail? Here is an example where it does:
+
+```{r}
+t <- torch_randn(3, 3)
+#t$t()$view(9)
+```
+
+When two operations that change the stride are executed in sequence, the second is pretty likely to fail. There is a way to exactly determine whether it will fail or not; but the easiest way is to just use a different method instead of view(): reshape(). The latter will “automagically” work metadata-only if that is possible, but make a copy if not:
+
+```{r}
+t <- torch_randn(3, 3)
+t2 <- t$t()$reshape(9)
+
+t$storage()$data_ptr()
+t2$storage()$data_ptr()
+```
+As expected, both tensors are now stored in different locations.
+
+
+#### Broadcasting
+
+We often have  to perform operations on tensors with shapes that don't match exactly.
+
+Of course, we wouldn't probably try to add vectors that don't have the same number of elements.  But maybe we want to multiply every element by a scalar.
+
+```{r}
+t1 <- torch_randn(3,5)
+t1*.5
+```
+
+This was pretty trivial for R, but the following does not work in R.  The intention here would be to add the same vector to every row in a matrix:
+
+```{r}
+m <- matrix(1:15, ncol = 5, byrow = TRUE)
+m2 <- matrix(1:5, ncol = 5, byrow = TRUE)
+
+#m + m2
+```
+
+
+Neither does it help if we make m2 a vector.
+
+```{r}
+m3 <- 1:5
+
+m + m3
+```
+
+This may have worked syntactically but is not what we intended.
+
+
+Now, we try both of the above with torch.
+
+```{r}
+t <- torch_tensor(m)
+t2 <- torch_tensor(m2)
+
+t$shape
+t2$shape
+
+t$add(t2)
+```
+
+```{r}
+t3 <- torch_tensor(m3)
+
+t3$shape
+
+t$add(t3)
+```
+
+
+The rules are the following. The first, unspectactular though it may look, is the basis for everything else.
+
+We align tensor shapes, starting from the right.
+Say we have two tensors, one of size 3 x 7 x 1, the other of size 1 x 5. Here they are, right-aligned:
+
+# t1, shape:        3  7  1
+# t2, shape:           1  5
+Starting from the right, the sizes along aligned axes either have to match exactly, or one of them has to be equal to 1. In the latter case, the singleton-dimension tensor is broadcast to the non-singleton one.
+In the above example, broadcasting happens twice – once for each tensor. This (virtually) yields
+
+# t1, shape:        3  7  5
+# t2, shape:           7  5
+If, on the left, one of the tensors has an additional axis (or more than one), the other is virtually expanded to have a dimension of size 1 in that place, in which case broadcasting will occur as stated in (2).
+In our example, this happens to the second tensor. First, there is a virtual expansion
+
+# t1, shape:        3  7  5
+# t2, shape:        1  7  5
+and then, broadcasting takes place:
+
+# t1, shape:        3  7  5
+# t2, shape:        3  7  5
+In this example, we see that broadcasting can act on both tensors at the same time. The thing to keep in mind, though, is that we always start looking from the right. For example, no broadcasting in the world could make this work:
+
+torch_zeros(4, 3, 2, 1)$add(torch_ones(4, 3, 2)) # error!
+
+Now, that was one of the longest, and least applied-seeming, perhaps, chapters in the book. But feeling comfortable with tensors is, I dare say, a precondition for being fluent in torch. The same goes for the topic covered in the next chapter, automatic differentiation. But the difference is, there torch does all the heavy lifting for us. We just need to understand what it’s doing.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

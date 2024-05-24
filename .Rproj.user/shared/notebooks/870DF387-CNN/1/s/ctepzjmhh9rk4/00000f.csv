@@ -1,0 +1,16 @@
+"0","x0 <- torch_tensor(c(2, 5, 3)) "
+"0","x1 <- torch_tensor(c(1, 4, 1))"
+"0",""
+"0","x <- torch_cat(list(x0, x1))"
+"0","x"
+"1","torch_tensor
+"
+"1"," 2
+ 5
+ 3
+ 1
+ 4
+ 1
+[ CPUFloatType{6} ]"
+"1","
+"
