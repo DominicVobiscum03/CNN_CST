@@ -1,8 +1,0 @@
-"0","t$mean(dim = c(1, 2))"
-"1","torch_tensor
-"
-"1","-0.2850
--0.0929
-[ CPUFloatType{2} ]"
-"1","
-"

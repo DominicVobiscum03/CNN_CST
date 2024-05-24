@@ -1,6 +1,0 @@
-"0","Eres <- 0.4 # gamma-rEay detector energy resolution in keV"
-"0","chnwidth <- Eres/2 # assign channel width to give 2 channels for energy resolution of detectors"
-"0","Emin <- floor(E0/(1+(E0/moc2)*(2))) # set the minimum energy for the detector below E0 back scattered energy"
-"0","Emax <- floor(E0)"
-"0","nchns <- (Emax-Emin)/chnwidth"
-"0","Echn <- tibble ( seq(0,nchns-1)*chnwidth + Emin + chnwidth/2 ) # calculate energy of detector channels"

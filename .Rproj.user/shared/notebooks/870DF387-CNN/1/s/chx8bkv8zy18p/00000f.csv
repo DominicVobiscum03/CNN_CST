@@ -1,2 +1,0 @@
-"0","x <- torch_arange(start = 1, end = 4) "
-"0","h <- torch_tensor(c(-1, 0, 1))"

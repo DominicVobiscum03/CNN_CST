@@ -1,3 +1,0 @@
-"0","Count <- tibble( times = seq(0,NS-1) ) #set up dataframe for count times"
-"0","# Count$times <- 1800 #set the count times as a default of 30 m (1800 s)"
-"0","Count_time <- 3600 #set the count time as a default of 60 m (3600 s)"

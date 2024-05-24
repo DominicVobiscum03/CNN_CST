@@ -1,7 +1,0 @@
-"0","NX <- 64 # number of pixels in x direction"
-"0","NZ <- NX # number of pixels in z direction, square space for now"
-"0","minx <- 0 # minimum x position in cm"
-"0","minz <- 0 # minimum y position in cm"
-"0","maxx <- 12.8  # maximum x position in cm"
-"0","maxz <- maxx  # maximum z position in cm"
-"0","pwidth <- maxx/NX # define pixel width in cm"

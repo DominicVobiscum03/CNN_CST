@@ -1,8 +1,0 @@
-"0","t <- torch_tensor(matrix(1:4, ncol = 2, byrow = TRUE))"
-"0","t[-1, -1]"
-"1","torch_tensor
-"
-"1","4
-[ CPULongType{} ]"
-"1","
-"

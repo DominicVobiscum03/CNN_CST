@@ -1,4 +1,0 @@
-"0","ndet <- 12 # number of gamma-ray detectors in array"
-"0","det_dist <- 1.0e+0 # separation in cm of the first detector from the source and between the remaining detectors in the array"
-"0","det_x <- t(tibble ( seq(1,ndet)*det_dist )) # x dimension of detector array locations"
-"0","det_r <- 0.254 # set the radius of the detector face in cm"
