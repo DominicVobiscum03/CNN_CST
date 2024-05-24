@@ -19,7 +19,7 @@ library(torchvision)
 library(luz)
 ```
 
-Start by creating some synthetic data.
+Start by creating some synthetic data for training.
 
 ```{r}
 # input dimensionality (number of input features)
