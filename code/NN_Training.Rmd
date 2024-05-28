@@ -1,0 +1,328 @@
+---
+title: "Neural Net Training and Validation"
+author: "Dominic Cugliari"
+date: "2024-05-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+```{r}
+library(torch)
+library(luz)
+library(tidymodels)
+library(palmerpenguins)
+library(dplyr)
+```
+
+
+Let's glimpse the data.
+
+```{r}
+penguins %>% glimpse()
+```
+
+### Loading Data
+
+```{r}
+penguins_dataset <- dataset(
+  name = "penguins_dataset()",
+  initialize = function(df) {
+    df <- na.omit(df)
+    self$x <- as.matrix(df[, 3:6]) %>% torch_tensor()
+    self$y <- torch_tensor(
+      as.numeric(df$species)
+    )$to(torch_long())
+  },
+  .getitem = function(i) {
+    list(x = self$x[i, ], y = self$y[i])
+  },
+  .length = function() {
+    dim(self$x)[1]
+  }
+)
+
+# Check a few things to make sure it worked
+
+ds <- penguins_dataset(penguins)
+length(ds)
+ds[1:10]
+```
+
+When you already have a tensor around, or something that’s readily converted to one, you can make use of a built-in dataset() generator: tensor_dataset(). This function can be passed any number of tensors; each batch item then is a list of tensor values:
+
+```{r}
+three <- tensor_dataset(
+  torch_randn(10), torch_randn(10), torch_randn(10)
+)
+three[1]
+```
+
+In our Penguins data set, we only need two lines of code.
+
+```{r}
+penguins <- na.omit(penguins)
+ds <- tensor_dataset(
+  torch_tensor(as.matrix(penguins[, 3:6])),
+  torch_tensor(
+    as.numeric(penguins$species)
+  )$to(torch_long())
+)
+
+ds[1:10]
+```
+
+Thirdly and finally, here is the most effortless possible way.
+
+```{r}
+library(torchvision)
+
+dir <- "/.torch-datasets"
+
+ds <- mnist_dataset(
+  root = dir,
+  train = TRUE, # default
+  download = TRUE,
+  transform = function(x) {
+    x %>% transform_to_tensor() 
+  }
+)
+
+first <- ds[1]
+cat("Image shape: ", first$x$shape, " Label: ", first$y, "\n")
+```
+
+
+```{r}
+dl <- dataloader(ds, batch_size = 32, shuffle = TRUE)
+length(dl)
+first_batch <- dl %>%
+  # obtain an iterator for this dataloader
+  dataloader_make_iter() %>% 
+  dataloader_next()
+
+dim(first_batch$x)
+dim(first_batch$y)
+```
+
+
+### Using a Neural Net
+
+
+```{r}
+# input dimensionality (number of input features)
+d_in <- 3
+# number of observations in training set
+n <- 1000
+
+x <- torch_randn(n, d_in)
+coefs <- c(0.2, -1.3, -0.5)
+y <- x$matmul(coefs)$unsqueeze(2) + torch_randn(n, 1)
+
+ds <- tensor_dataset(x, y)
+
+dl <- dataloader(ds, batch_size = 100, shuffle = TRUE)
+```
+
+
+```{r}
+# dimensionality of hidden layer
+d_hidden <- 32
+# output dimensionality (number of predicted features)
+d_out <- 1
+
+net <- nn_module(
+  initialize = function(d_in, d_hidden, d_out) {
+    self$net <- nn_sequential(
+      nn_linear(d_in, d_hidden),
+      nn_relu(),
+      nn_linear(d_hidden, d_out)
+    )
+  },
+  forward = function(x) {
+    self$net(x)
+  }
+)
+```
+
+
+
+```{r}
+fitted <- net %>%
+  setup(loss = nn_mse_loss(), optimizer = optim_adam) %>%
+  set_hparams(
+    d_in = d_in,
+    d_hidden = d_hidden, d_out = d_out
+  ) %>%
+  fit(dl, epochs = 200)
+```
+
+```{r}
+fitted <- net %>%
+  setup(loss = nn_mse_loss(), optimizer = optim_adam) %>%
+  set_hparams(
+    d_in = d_in,
+    d_hidden = d_hidden, d_out = d_out
+  ) %>%
+  fit(ds, epochs = 200)
+```
+
+```{r}
+fitted <- net %>%
+  setup(loss = nn_mse_loss(), optimizer = optim_adam) %>%
+  set_hparams(
+    d_in = d_in,
+    d_hidden = d_hidden, d_out = d_out
+  ) %>%
+  fit(list(x, y), epochs = 200)
+```
+
+```{r}
+fitted <- net %>%
+  setup(loss = nn_mse_loss(), optimizer = optim_adam) %>%
+  set_hparams(
+    d_in = d_in,
+    d_hidden = d_hidden, d_out = d_out
+  ) %>%
+  fit(list(as.matrix(x), as.matrix(y)), epochs = 200)
+
+
+```
+
+
+
+
+### Integrating Training and Validation Sets
+
+In deep learning, training and validation phases are interleaved. Every epoch of training is followed by an epoch of validation. Importantly, the data used in both phases have to be strictly disjoint.
+
+In each training phase, gradients are computed and weights are changed; during validation, none of that happens. Why have a validation set, then? If, for each epoch, we compute task-relevant metrics for both partitions, we can see if we are overfitting to the training data: that is, drawing conclusions based on training sample specifics not descriptive of the overall population we want to model. All we have to do is two things: instruct luz to compute a suitable metric, and pass it an additional dataloader pointing to the validation data.
+
+The former is done in setup(), and for a regression task, common choices are mean squared or mean absolute error (MSE or MAE, resp.). As we’re already using MSE as our loss, let’s choose MAE for a metric:
+
+
+
+Let's create our Training and Validation sets.
+
+```{r}
+train_ids <- sample(1:length(ds), size = 0.6 * length(ds))
+valid_ids <- sample(
+  setdiff(1:length(ds), train_ids),
+  size = 0.2 * length(ds)
+)
+test_ids <- setdiff(
+  1:length(ds),
+  union(train_ids, valid_ids)
+)
+
+train_ds <- dataset_subset(ds, indices = train_ids)
+valid_ds <- dataset_subset(ds, indices = valid_ids)
+test_ds <- dataset_subset(ds, indices = test_ids)
+
+train_dl <- dataloader(train_ds,
+  batch_size = 100, shuffle = TRUE
+)
+valid_dl <- dataloader(valid_ds, batch_size = 100)
+test_dl <- dataloader(test_ds, batch_size = 100)
+```
+
+Now we can start the enhanced model
+
+```{r}
+fitted <- net %>%
+  setup(
+    loss = nn_mse_loss(),
+    optimizer = optim_adam,
+    metrics = list(luz_metric_mae())
+  ) %>%
+  set_hparams(
+    d_in = d_in,
+    d_hidden = d_hidden, d_out = d_out
+  ) %>%
+  fit(train_dl, epochs = 200, valid_data = valid_dl)
+```
+
+Even though both training and validation sets come from the exact same distribution, we do see a bit of overfitting. This is a topic we’ll talk about more in the next chapter.
+
+Once training has finished, the fitted object above holds a history of epoch-wise metrics, as well as references to a number of important objects involved in the training process. Among the latter is the fitted model itself – which enables an easy way to obtain predictions on the test set:
+
+```{r}
+fitted %>% predict(test_dl)
+```
+
+We also want to evaluate performance on the test set:
+
+```{r}
+fitted %>% evaluate(test_dl)
+```
+At this point, you may feel that what we’ve gained in code efficiency, we may have lost in flexibility. Coding the training loop yourself, you can arrange for all kinds of things to happen: save model weights, adjust the learning rate … whatever you need.
+
+In reality, no flexibility is lost. Instead, luz offers a standardized way to achieve the same goals: callbacks. Callbacks are objects that can execute arbitrary R code, at any of the following points in time:
+
+when the overall training process starts or ends (on_fit_begin() / on_fit_end());
+
+when an epoch (comprising training and validation) starts or ends (on_epoch_begin() / on_epoch_end());
+
+when during an epoch, the training (validation, resp.) phase starts or ends (on_train_begin() / on_train_end(); on_valid_begin() / on_valid_end());
+
+when during training (validation, resp.), a new batch is either about to be or has been processed (on_train_batch_begin() / on_train_batch_end(); on_valid_batch_begin() / on_valid_batch_end());
+
+and even at specific landmarks inside the “innermost” training / validation logic, such as “after loss computation”, “after backward()” or “after step()”.
+
+While you can implement any logic you wish using callbacks (and we’ll see how to do this in a later chapter), luz already comes equipped with a very useful set. For example:
+
+luz_callback_model_checkpoint() saves model weights after every epoch (or just in case of improvements, if so instructed).
+
+luz_callback_lr_scheduler() activates one of torch’s learning rate schedulers. Different scheduler objects exist, each following their own logic in dynamically updating the learning rate.
+
+luz_callback_early_stopping() terminates training once model performance stops to improve. What exactly “stops to improve” should mean is configurable by the user.
+
+Callbacks are passed to the fit() method in a list. For example, augmenting our most recent workflow:
+
+```{r}
+fitted <- net %>%
+  setup(
+    loss = nn_mse_loss(),
+    optimizer = optim_adam,
+    metrics = list(luz_metric_mae())
+  ) %>%
+  set_hparams(d_in = d_in,
+              d_hidden = d_hidden,
+              d_out = d_out) %>%
+  fit(
+    train_dl,
+    epochs = 200,
+    valid_data = valid_dl,
+    callbacks = list(
+      luz_callback_model_checkpoint(path = "./models/",
+                                    save_best_only = TRUE),
+      luz_callback_early_stopping(patience = 10)
+    )
+  )
+```
+
+
+```{r}
+fitted %>% predict(test_dl)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
