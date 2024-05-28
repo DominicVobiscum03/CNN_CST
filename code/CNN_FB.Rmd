@@ -19,6 +19,7 @@ library(luz)
 library(tidymodels)
 library(broom)
 library(raster)
+library(png)
 ```
 
 ```{r}
@@ -35,6 +36,9 @@ Load in our data we need.
 ref65 <- read.csv("raw_data/65ref.csv")
 ref65 <- ref65 %>% as.matrix()
 ref65 <- ref65[,2:66]
+refimg <- ref65 %>% image()
+
+
 
 ```
 
