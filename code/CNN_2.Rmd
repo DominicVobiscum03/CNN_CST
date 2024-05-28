@@ -55,7 +55,7 @@ Create the torch system matrix
 #yptest <- matrix(0, nxd, nphi)
 
 make_torch_system_matrix <- function(nxd, nrd, nphi) {
-  system_matrix <- torch_zeros(2*nrd*nphi, 2*nxd*nxd);
+  system_matrix <- torch_zeros(nrd*nphi, nxd*nxd);
       for (xv in 1:nxd) { 
         for (yv in 1:nxd){
             for (ph in 1:nphi){
