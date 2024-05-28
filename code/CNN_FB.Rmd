@@ -23,7 +23,7 @@ library(png)
 ```
 
 ```{r}
-nxd <- 65
+nxd <- 64
 disp_scale <- 5
 nrd <- as.integer(nxd * 1.42)
 nphi <- nrd
@@ -34,31 +34,35 @@ Load in our data we need.
 
 ```{r}
 ref65 <- read.csv("raw_data/65ref.csv")
+ref65 <- ref65 %>% as.data.frame()
 ref65 <- ref65 %>% as.matrix()
-ref65 <- ref65[,2:66]
+ref65 <- ref65[2:65,2:65]
 refimg <- ref65 %>% image()
-
-
 
 ```
 
 
+
+
 ```{r}
-reftorch <- torch_tensor(ref64)$unsqueeze(1)
+reftorch <- torch_tensor(ref65)$unsqueeze(1)
 reftorch <- reftorch$unsqueeze(1)
+reftorch <- reftorch$float()
 ```
 
 Create the torch system matrix
 
 ```{r}
+#yptest <- matrix(0, nxd, nphi)
+
 make_torch_system_matrix <- function(nxd, nrd, nphi) {
-  system_matrix <- torch_zeros(nrd*nphi, nxd*nxd)
+  system_matrix <- torch_zeros(2*nrd*nphi, 2*nxd*nxd);
       for (xv in 1:nxd) { 
         for (yv in 1:nxd){
             for (ph in 1:nphi){
-                yp <- -(xv-(nxd*0.5)) * sin(ph*pi/nphi)+(yv-(nxd*0.5)) * cos(ph*pi/nphi)
-                yp_bin <- as.integer(yp+nrd/2)
-                system_matrix[yp_bin + ph*nrd, xv + yv*nxd] = 1
+                yp <- -(xv-(nxd*0.5)) * sin(ph*pi/nphi)+(yv-(nxd*0.5)) * cos(ph*pi/nphi);
+                yp_bin <- as.integer(yp+nrd/2);
+                system_matrix[yp_bin + ph*nrd, xv + yv*nxd] = 1;
             }
         }
       return(system_matrix)}
@@ -68,11 +72,12 @@ make_torch_system_matrix <- function(nxd, nrd, nphi) {
 Create a forward projection function
 
 ```{r}
-fp_system_matrix <- function(image, sys_mat, nxd, nrd, nphi) {
-  fp <- torch_reshape(image, c(nxd*nxd,1))
-  fb <- torch_mm(sys_mat, fp)
-  return(torch_reshape(fb, c(nphi,nrd)))
-}
+fp_system_torch <- function(image, sys_mat, nxd, nrd, nphi) {
+  fp <- torch_reshape(image, c(nxd*nxd,1));
+  fb <- torch_mm(sys_mat, fp);
+  return(torch_reshape(fb, c(nphi,nrd)));
+  
+  }
 ```
 
 Create a back projection function
@@ -87,6 +92,16 @@ bp_system_torch <- function(sino, sys_mat, nxd, nrd, nphi) {
 Make the sys_mat
 
 ```{r}
-sys_mat <- make_torch_system_matrix(nxd, nrd, nphi)
+t <- make_torch_system_matrix(nxd, nrd, nphi)
+t
+```
+
+```{r}
+s <- fp_system_torch(reftorch, t[1:8100,1:4096], nxd, nrd, nphi)
+
+sino <- s$squeeze(1)
+sino<- sino$squeeze(1)
+sino <- sino %>% as.matrix()
+image(sino)
 ```
 
