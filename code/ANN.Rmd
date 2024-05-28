@@ -10,7 +10,7 @@ Create working directory
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir=normalizePath(".."))
 ```
-Karsten wuz here
+
 
 Load libraries
 ```{r}
