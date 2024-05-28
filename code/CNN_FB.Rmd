@@ -1,0 +1,88 @@
+---
+title: "Image Reconstruction CNN"
+author: "Dominic Cugliari"
+date: "2024-05-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+Import our library
+
+```{r}
+library(torch)
+library(luz)
+library(tidymodels)
+library(broom)
+library(raster)
+```
+
+```{r}
+nxd <- 65
+disp_scale <- 5
+nrd <- as.integer(nxd * 1.42)
+nphi <- nrd
+```
+
+
+Load in our data we need.
+
+```{r}
+ref65 <- read.csv("raw_data/65ref.csv")
+ref65 <- ref65 %>% as.matrix()
+ref65 <- ref65[,2:66]
+
+```
+
+
+```{r}
+reftorch <- torch_tensor(ref64)$unsqueeze(1)
+reftorch <- reftorch$unsqueeze(1)
+```
+
+Create the torch system matrix
+
+```{r}
+make_torch_system_matrix <- function(nxd, nrd, nphi) {
+  system_matrix <- torch_zeros(nrd*nphi, nxd*nxd)
+      for (xv in 1:nxd) { 
+        for (yv in 1:nxd){
+            for (ph in 1:nphi){
+                yp <- -(xv-(nxd*0.5)) * sin(ph*pi/nphi)+(yv-(nxd*0.5)) * cos(ph*pi/nphi)
+                yp_bin <- as.integer(yp+nrd/2)
+                system_matrix[yp_bin + ph*nrd, xv + yv*nxd] = 1
+            }
+        }
+      return(system_matrix)}
+    }
+```
+
+Create a forward projection function
+
+```{r}
+fp_system_matrix <- function(image, sys_mat, nxd, nrd, nphi) {
+  fp <- torch_reshape(image, c(nxd*nxd,1))
+  fb <- torch_mm(sys_mat, fp)
+  return(torch_reshape(fb, c(nphi,nrd)))
+}
+```
+
+Create a back projection function
+
+```{r}
+bp_system_torch <- function(sino, sys_mat, nxd, nrd, nphi) {
+   return(torch_reshape(torch_mm(sys_mat.T, torch_reshape(sino, c(nrd*nphi,1))), c(nxd,nxd)))
+}
+
+```
+
+Make the sys_mat
+
+```{r}
+sys_mat <- make_torch_system_matrix(nxd, nrd, nphi)
+```
+
