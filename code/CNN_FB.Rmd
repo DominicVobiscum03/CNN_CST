@@ -79,13 +79,13 @@ Create the torch system matrix
    # }
 
 make_torch_system_matrix <- function(nxd, nrd, nphi) {
-  system_matrix <- torch$zeros(nrd * nphi, nxd * nxd)
+  system_matrix <- torch_zeros(nrd * nphi, nxd * nxd)
   for (xv in 1:nxd) {
     for (yv in 1:nxd) {
       for (ph in 1:nphi) {
         yp <- -(xv - (nxd * 0.5)) * sin(ph * pi / nphi) + (yv - (nxd * 0.5)) * cos(ph * pi / nphi)
         yp_bin <- as.integer(yp + nrd / 2)
-        system_matrix[[yp_bin + ph * nrd, xv + yv * nxd]] <- 1.0
+        system_matrix[yp_bin + ph * nrd, xv + yv * nxd] = 1.0
       }
     }
   }
