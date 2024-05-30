@@ -59,7 +59,6 @@ z <- (z-(max(z)+1)/2) # origin referenced coordinates
 
 Train neural net
 
-Hello World
 
 ```{r}
 # read in sinogram data
@@ -78,7 +77,7 @@ degree <- data.frame(angle = seq(0,nAngle-1)*angleStep)
 nn <- list()
 nn$weights <- list()
 
-nn$weights[[1]] <- matrix(0, nrow = 16, ncol = 2)
+nn$weights[[1]] <- matrix(0, nrow = 91, ncol = 2)
 nn$weights[[2]] <- matrix(0, nrow = 3, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
@@ -115,7 +114,11 @@ for (i in 1:length(output)){
                    ) 
    ############################################################ NEURAL NET
    nn <-neuralnet(f, data, hidden = 2,
-                  startweights = nn$weights)
+                  startweights = nn$weights,
+                  algorithm = "backprop",
+                  learningrate = .01,
+                  threshold = 1e-8,
+                  )
    error[i] <- nn$result.matrix[1]
    }
 
@@ -126,58 +129,38 @@ m1 <- nn$weights[[1]][[1]]
 m2 <- nn$weights[[1]][[2]]
 m1 <- m1 %>% as.data.frame()
 m2 <- m2 %>% as.data.frame()
+
+errormat <- error %>% matrix(,65,65)
 ```
 
 ```{r}
 filt_sinoA <- sino
 filt_sinoB <- sino
-#number_cols <- ncol(sino)
+number_cols <- ncol(sino)
 
-#for(val in 1:number_cols){
-                   # filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
-#}
+for(val in 1:number_cols){
+                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+}
 
-#filt_sinoA %>% 
- # as.matrix()
+filt_sinoA %>% 
+  as.matrix()
 
-#write_csv(filt_sinoA, "raw_data/filtsinoa-DC.csv")
+write_csv(filt_sinoA, "raw_data/filtsinoa-DC.csv")
 
 
-#for(val in 1:number_cols){
-            #       filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
-#}
+for(val in 1:number_cols){
+                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+}
 
-#filt_sinoB %>% 
-#  as.matrix()
+filt_sinoB %>% 
+  as.matrix()
 
-#write_csv(filt_sinoB, "raw_data/filtsinob-DC.csv")
+write_csv(filt_sinoB, "raw_data/filtsinob-DC.csv")
 
 
 write_csv(m1, "raw_data/m1-DC.csv")
 write_csv(m2, "raw_data/m2-DC.csv")
 
-
-```
-
-```{r}
-filt_sinoAT <- t(filt_sinoA)
-w1 <- m1[2:91,1] %>% as.vector()
-
-result1 <- filt_sinoAT * w1
-result1 <- t(result1)
-result1 <- result1 %>% as.data.frame()
-
-write_csv(result1, "raw_data/filtsinoa-DC.csv")
-
-
-filt_sinoBT <- t(filt_sinoB)
-w2 <- m1[2:91,2] %>% as.vector()
-
-result2 <- filt_sinoBT * w2
-result2 <- t(result2)
-result2 <- result2 %>% as.data.frame()
-
-write_csv(result2, "raw_data/filtsinob-DC.csv")
 
 ```
 
@@ -189,10 +172,6 @@ Read in the FBP image!!!
 p <- p %>% as.matrix()
 image(p)
 ```
-
-
-
-
 
 
 
