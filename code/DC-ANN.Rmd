@@ -140,7 +140,7 @@ for(val in 1:number_cols){
 filt_sinoA %>% 
   as.matrix()
 
-write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
+write_csv(filt_sinoA, "raw_data/filtsinoa-DC.csv")
 
 
 for(val in 1:number_cols){
@@ -150,11 +150,11 @@ for(val in 1:number_cols){
 filt_sinoB %>% 
   as.matrix()
 
-write_csv(filt_sinoB, "raw_data/filtsinob.csv")
+write_csv(filt_sinoB, "raw_data/filtsinob-DC.csv")
 
 
-write_csv(m1, "raw_data/m1.csv")
-write_csv(m2, "raw_data/m2.csv")
+write_csv(m1, "raw_data/m1-DC.csv")
+write_csv(m2, "raw_data/m2-DC.csv")
 
 
 ```
@@ -162,7 +162,7 @@ write_csv(m2, "raw_data/m2.csv")
 Read in the FBP image!!!
 
 ```{r}
- p <- read.csv("C:/Users/capa01/Documents/R-Projects/ANN_work/clean_data/FBP1.csv")
+ p <- read.csv("C:/Users/capa01/Documents/R-Projects/ANN_work/clean_data/FBP1-DC.csv")
 p <- p %>% as.matrix()
 image(p)
 ```

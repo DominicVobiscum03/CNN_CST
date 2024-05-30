@@ -2,11 +2,11 @@ library(PET)
 library(png)
 
 #Read in the Sinograms
-filt1 <- read.csv("raw_data/filtsinoa.csv")
+filt1 <- read.csv("raw_data/filtsinoa-DC.csv")
 filt1 <- as.matrix(filt1)
 image(filt1)
 
-filt2 <- read.csv("raw_data/filtsinob.csv")
+filt2 <- read.csv("raw_data/filtsinob-DC.csv")
 filt2 <- as.matrix(filt2)
 image(filt2)
 
@@ -24,8 +24,8 @@ image(filt2data)
 
 
 # Read in the biases
-m1 <- as.matrix(read.csv("raw_data/m1.csv"))
-m2 <- as.matrix(read.csv("raw_data/m2.csv"))
+m1 <- as.matrix(read.csv("raw_data/m1-DC.csv"))
+m2 <- as.matrix(read.csv("raw_data/m2-DC.csv"))
 
 b1 <- matrix(m1[1,1], 256, 256)
 b2 <- matrix(m1[1,2], 256, 256)
@@ -88,7 +88,7 @@ for (i in 1:nrow(filts2)){
 
 image(filtf)
 
-write.csv(filtf, "clean_data/FBP1.csv")
+write.csv(filtf, "clean_data/FBP1-DC.csv")
 
 
 
