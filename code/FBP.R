@@ -10,13 +10,6 @@ filt2 <- read.csv("raw_data/filtsinob.csv")
 filt2 <- as.matrix(filt2)
 image(filt2)
 
-filt3 <- read.csv("raw_data/filtsinoc.csv")
-filt3 <- as.matrix(filt3)
-image(filt3)
-
-filt4 <- read.csv("raw_data/filtsinod.csv")
-filt4 <- as.matrix(filt4)
-image(filt4)
 
 
 # Back Projection
