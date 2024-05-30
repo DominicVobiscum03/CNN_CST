@@ -1,7 +1,7 @@
 library(PET)
 library(png)
 
-#Read in the Sinograms yay
+#Read in the Sinograms
 filt1 <- read.csv("raw_data/filtsinoa-SO.csv")
 filt1 <- as.matrix(filt1)
 image(filt1)
