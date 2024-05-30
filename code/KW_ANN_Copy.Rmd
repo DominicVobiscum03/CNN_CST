@@ -1,0 +1,171 @@
+---
+title: "ANN"
+author: "Slakes"
+date: "2023-06-28"
+output: html_document
+---
+
+Create working directory
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+
+
+Load libraries
+```{r}
+library(neuralnet)
+library(tidyverse)
+library(binhf)
+library(Matrix)
+library(ggplot2)
+library(pracma)
+library(OpenImageR)
+```
+
+read in .csv of reference image and pass reference pixel value/location into a 'output' vector and 'x' and 'z' vectors. 
+
+It is important to note that all the "zeros" have the value 0.001. I don't know how this affects the training, but it would be worth getting a new training set with real zeroes and trying. 
+
+I have been working to figure out how to train this and have the error print iteratively so we can see if it is improving. I have not figured this out yet.
+```{r}
+# read in reference data
+m <- read.csv("raw_data/65ref.csv")
+m <- m[, -c(1)]
+v <- matrix(nrow = 3, ncol = 0)
+# Populate 'v' with columns, rows, and values from 'm'
+for (i in 1:nrow(m)){
+  for (j in 1:ncol(m)){
+    v <- cbind(v, c(i,j,m[i,j]))
+  }
+}
+
+# Create empty vectors `x`, `z`, and 'output'
+x <- vector(length = 0) 
+z <- vector(length = 0)
+output <- vector(length = 0)
+
+# Extract values from each row of `v`
+for (i in 1:ncol(v)){ 
+     x <- c(x, v[2, i])
+     z <- c(z, v[1, i])
+     output <- c(output, v[3, i]) 
+   }
+x <- (x-(max(x)+1)/2) # make x and z correct for the shift flip sum code
+z <- (z-(max(z)+1)/2) # origin referenced coordinates
+```
+
+
+
+Train neural net
+```{r}
+# read in sinogram data
+sino <- read.csv('raw_data/65sin.csv')
+sino <- sino[, -c(1)]
+# number of projections
+nAngle  <- ncol(sino)
+# number of detectors
+nDetect <- nrow(sino)
+# Degrees between projections
+angleStep <- 180/(nAngle-1) 
+# compute angle of each projection in sinogram
+degree <- data.frame(angle = seq(0,nAngle-1)*angleStep) 
+
+# initialize weights
+nn <- list()
+nn$weights <- list()
+
+nn$weights[[1]] <- matrix(0, nrow = 16, ncol = 2)
+nn$weights[[2]] <- matrix(0, nrow = 3, ncol = 1)
+error <- matrix(nrow = 1, ncol = 0)
+for (i in 1:length(output)){
+   # compute shift of sinogram detector positions for each projection based on current image pixel
+   degree$pixel <- round(x[i]*cos(pi*degree$angle/180) + z[i]*sin(pi*degree$angle/180))
+   # transpose the sinogram
+   tsino <- t(sino)
+   # create a space with dimension tsino
+   ssino <- tsino   
+
+   ######################################################## SHIFT SUM FLIP 
+   # Perform shift according to dShift
+   for (j in 1:nAngle){ 
+      shift_amount <- degree$pixel[j]
+      shifted_row <- circshift(tsino[j, ], shift_amount)
+      ssino[j, ] <- shifted_row
+      }
+   # perform summation
+   f_vector <- colSums(ssino) 
+   # perform flip
+   z_vector <- rev(f_vector)  
+   
+   ################################################################## DATA
+   data <- t(as_tibble(c(z_vector, output[i])))
+   # Define names of the columns for the data to used by function 
+   ANN_names <- c(paste0("z",(as.character(c(seq(1:nDetect))))),"o") 
+  
+    colnames(data) <- ANN_names
+   ############################################################### FORMULA
+   f <- as.formula(paste(ANN_names[nDetect+1],
+                         "~",
+                         paste(ANN_names[!ANN_names %in% "o"], collapse = " + ")
+                         )
+                   ) 
+   ############################################################ NEURAL NET
+   nn <-neuralnet(f, data, hidden = 2,
+                  startweights = nn$weights)
+   error[i] <- nn$result.matrix[1]
+   }
+
+plot(nn, rep = "best")
+# Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the
+# weights from the second layer
+m1 <- nn$weights[[1]][[1]]
+m2 <- nn$weights[[1]][[2]]
+m1 <- m1 %>% as.data.frame()
+m2 <- m2 %>% as.data.frame()
+```
+
+```{r}
+filt_sinoA <- sino
+filt_sinoB <- sino
+number_cols <- ncol(sino)
+
+for(val in 1:number_cols){
+                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+}
+
+filt_sinoA %>% 
+  as.matrix()
+
+write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
+
+
+for(val in 1:number_cols){
+                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+}
+
+filt_sinoB %>% 
+  as.matrix()
+
+write_csv(filt_sinoB, "raw_data/filtsinob.csv")
+
+
+write_csv(m1, "raw_data/m1.csv")
+write_csv(m2, "raw_data/m2.csv")
+
+
+```
+
+
+Read in the FBP image!!!
+
+```{r}
+ p <- read.csv("C:/Users/capa01/Documents/R-Projects/ANN_work/clean_data/FBP1.csv")
+p <- p %>% as.matrix()
+image(p)
+```
+
+
+##error <- matrix(nrow = 1, ncol = 0)
+##error <- c(error, nn$result.matrix[i])
