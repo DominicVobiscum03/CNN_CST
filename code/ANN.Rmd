@@ -112,9 +112,7 @@ for (i in 1:length(output)){
                    ) 
    ############################################################ NEURAL NET
    nn <-neuralnet(f, data, hidden = 2,
-                  startweights = nn$weights,
-                  algorithm = 'backprop',
-                  learningrate = 0.0001)
+                  startweights = nn$weights)
    error[i] <- nn$result.matrix[1]
    }
 
@@ -132,33 +130,24 @@ filt_sinoA <- sino
 filt_sinoB <- sino
 number_cols <- ncol(sino)
 
-#for(val in 1:number_cols){
-                    #filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
-#}
+for(val in 1:number_cols){
+                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+}
 
-#filt_sinoA %>% 
- # as.matrix()
+filt_sinoA %>% 
+  as.matrix()
 
-#write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
+write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
 
 
-#for(val in 1:number_cols){
-                   # filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
-#}
+for(val in 1:number_cols){
+                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+}
 
-#filt_sinoB %>% 
-  #as.matrix()
+filt_sinoB %>% 
+  as.matrix()
 
-#write_csv(filt_sinoB, "raw_data/filtsinob.csv")
-
-m1 <- m1 %>% as.matrix()
-m2 <- m2 %>% as.matrix()
-
-filt1 <- convolution(sino, m1[2:91,1], 'same')
-filt2 <- convolution(sino, m1[2:91,2], 'same')
-
-write_csv(filt1, "raw_data/filtsinoa.csv")
-write_csv(filt2, "raw_data/filtsinob.csv")
+write_csv(filt_sinoB, "raw_data/filtsinob.csv")
 
 
 write_csv(m1, "raw_data/m1.csv")
