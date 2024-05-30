@@ -69,7 +69,7 @@ filtsb <- filtsb*w2
 
 
 
-filts <- filtsa + filtsb# + filtsc + filtsd
+filts <- filtsa + filtsb
 image(filts)
 
 
