@@ -29,13 +29,6 @@ FBP2 <- iradon(filt2, XSamples = 256, YSamples = 256, mode = "BF")
 filt2data <- FBP2$irData
 image(filt2data)
 
-FBP3 <- iradon(filt3, XSamples = 256, YSamples = 256, mode = "BF")
-filt3data <- FBP3$irData
-image(filt3data)
-
-FBP4 <- iradon(filt4, XSamples = 256, YSamples =256, mode = "BF")
-filt4data <- FBP4$irData
-image(filt4data)
 
 # Read in the biases
 m1 <- as.matrix(read.csv("raw_data/m1.csv"))
@@ -43,13 +36,11 @@ m2 <- as.matrix(read.csv("raw_data/m2.csv"))
 
 b1 <- matrix(m1[1,1], 256, 256)
 b2 <- matrix(m1[1,2], 256, 256)
-b3 <- matrix(m1[1,3], 256, 256)
-b4 <- matrix(m1[1,4], 256, 256)
+
 
 w1 <- m2[2,1]
 w2 <- m2[3,1]
-w3 <- m2[4,1]
-w4 <- m2[5,1]
+
 
 bf <- matrix(m2[1,1], 256, 256)
 
@@ -57,8 +48,7 @@ bf <- matrix(m2[1,1], 256, 256)
 
 filta <- filt1data - b1
 filtb <- filt2data - b2
-filtc <- filt3data - b3
-filtd <- filt4data - b4
+
 
 filtsa <- matrix(nrow = 256, ncol = 256)
 for (i in 1:nrow(filta)){
@@ -77,27 +67,12 @@ for (i in 1:nrow(filtb)){
 }
 image(filtsb)
 
-filtsc <- matrix(nrow = 256, ncol = 256)
-for (i in 1:nrow(filtc)){
-  for (j in 1:ncol(filtc)){
-    filtsc[i,j] <- -1/(1+exp(-(filtc[i,j])))
-  }
-}
-image(filtsc)
 
-filtsd <- matrix(nrow = 256, ncol = 256)
-for (i in 1:nrow(filtd)){
-  for (j in 1:ncol(filtd)){
-    filtsd[i,j] <- -1/(1+exp(-(filtd[i,j])))
-  }
-}
-image(filtsd)
 
 
 filtsa <- filtsa*w1
 filtsb <- filtsb*w2
-filtsc <- filtsc*w3
-filtsd <- filtsd*w4
+
 
 
 
