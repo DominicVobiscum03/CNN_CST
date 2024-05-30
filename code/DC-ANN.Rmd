@@ -131,26 +131,26 @@ m2 <- m2 %>% as.data.frame()
 ```{r}
 filt_sinoA <- sino
 filt_sinoB <- sino
-number_cols <- ncol(sino)
+#number_cols <- ncol(sino)
 
-for(val in 1:number_cols){
-                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
-}
+#for(val in 1:number_cols){
+                   # filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+#}
 
-filt_sinoA %>% 
-  as.matrix()
+#filt_sinoA %>% 
+ # as.matrix()
 
-write_csv(filt_sinoA, "raw_data/filtsinoa-DC.csv")
+#write_csv(filt_sinoA, "raw_data/filtsinoa-DC.csv")
 
 
-for(val in 1:number_cols){
-                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
-}
+#for(val in 1:number_cols){
+            #       filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+#}
 
-filt_sinoB %>% 
-  as.matrix()
+#filt_sinoB %>% 
+#  as.matrix()
 
-write_csv(filt_sinoB, "raw_data/filtsinob-DC.csv")
+#write_csv(filt_sinoB, "raw_data/filtsinob-DC.csv")
 
 
 write_csv(m1, "raw_data/m1-DC.csv")
@@ -159,6 +159,29 @@ write_csv(m2, "raw_data/m2-DC.csv")
 
 ```
 
+```{r}
+filt_sinoAT <- t(filt_sinoA)
+w1 <- m1[2:91,1] %>% as.vector()
+
+result1 <- filt_sinoAT * w1
+result1 <- t(result1)
+result1 <- result1 %>% as.data.frame()
+
+write_csv(result1, "raw_data/filtsinoa-DC.csv")
+
+
+filt_sinoBT <- t(filt_sinoB)
+w2 <- m1[2:91,2] %>% as.vector()
+
+result2 <- filt_sinoBT * w2
+result2 <- t(result2)
+result2 <- result2 %>% as.data.frame()
+
+write_csv(result2, "raw_data/filtsinob-DC.csv")
+
+```
+
+
 Read in the FBP image!!!
 
 ```{r}
@@ -166,4 +189,10 @@ Read in the FBP image!!!
 p <- p %>% as.matrix()
 image(p)
 ```
+
+
+
+
+
+
 
