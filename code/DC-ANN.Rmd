@@ -21,7 +21,7 @@ library(binhf)
 library(Matrix)
 library(ggplot2)
 library(pracma)
-library(OpenImageR)
+library(openImageR)
 ```
 
 read in .csv of reference image and pass reference pixel value/location into a 'output' vector and 'x' and 'z' vectors.
@@ -60,7 +60,9 @@ z <- (z-(max(z)+1)/2) # origin referenced coordinates
 Train neural net
 
 
-```{r}
+```{r, cache= TRUE}
+set.seed(333)
+
 # read in sinogram data
 sino <- read.csv('raw_data/65sin.csv')
 sino <- sino[, -c(1)]

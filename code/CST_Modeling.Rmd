@@ -131,7 +131,7 @@ X$Z <- X$X
 image( Image_plane )
 ```
 
-For each nonzero pixel in image plan compute position (in cm) scattering angle (in degrees), its cosine and the energy E' (in keV) of the scattered gamma ray
+For each nonzero pixel in image plane, compute position (in cm) scattering angle (in degrees), its cosine and the energy E' (in keV) of the scattered gamma ray
 
 ```{r}
 Ep <- array (0.00E00, dim = c(NX,NZ,ndet) ) #initialize scattered gamma-ray energy in a 3D array of image plane for each detector
