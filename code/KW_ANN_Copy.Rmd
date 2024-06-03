@@ -8,7 +8,7 @@ output: html_document
 Create working directory
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir=normalizePath(".."))
+knitr::opts_knit$set(root.dir='Z:/Research/ANN Work')
 ```
 
 
@@ -62,6 +62,7 @@ Train neural net
 ```{r}
 # read in sinogram data
 sino <- read.csv('raw_data/65sin.csv')
+ranges <- sino[,c(1)]
 sino <- sino[, -c(1)]
 # number of projections
 nAngle  <- ncol(sino)
@@ -76,8 +77,9 @@ degree <- data.frame(angle = seq(0,nAngle-1)*angleStep)
 nn <- list()
 nn$weights <- list()
 
-nn$weights[[1]] <- matrix(0, nrow = 16, ncol = 2)
-nn$weights[[2]] <- matrix(0, nrow = 3, ncol = 1)
+set.seed(222) 
+nn$weights[[1]] <- matrix(runif(1,min=-1,max=1), nrow = 16, ncol = 2)
+nn$weights[[2]] <- matrix(runif(1,min=-1,max=1), nrow = 3, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
    # compute shift of sinogram detector positions for each projection based on current image pixel
@@ -86,7 +88,6 @@ for (i in 1:length(output)){
    tsino <- t(sino)
    # create a space with dimension tsino
    ssino <- tsino   
-
    ######################################################## SHIFT SUM FLIP 
    # Perform shift according to dShift
    for (j in 1:nAngle){ 
@@ -103,7 +104,7 @@ for (i in 1:length(output)){
    data <- t(as_tibble(c(z_vector, output[i])))
    # Define names of the columns for the data to used by function 
    ANN_names <- c(paste0("z",(as.character(c(seq(1:nDetect))))),"o") 
-  
+   
     colnames(data) <- ANN_names
    ############################################################### FORMULA
    f <- as.formula(paste(ANN_names[nDetect+1],
@@ -113,10 +114,10 @@ for (i in 1:length(output)){
                    ) 
    ############################################################ NEURAL NET
    nn <-neuralnet(f, data, hidden = 2,
-                  startweights = nn$weights)
+                  startweights = nn$weights,
+                  lifesign = "minimal")
    error[i] <- nn$result.matrix[1]
    }
-
 plot(nn, rep = "best")
 # Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the
 # weights from the second layer
