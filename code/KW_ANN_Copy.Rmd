@@ -127,12 +127,13 @@ m2 <- m2 %>% as.data.frame()
 ```{r}
 filt_sinoA <- sino
 filt_sinoB <- sino
-number_cols <- ncol(sino)
+nRows <- nrow(sino)
 
-for(val in 1:number_cols){
-                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+for(val in 1:nRows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoA[val,s] <- m1[1+val,1]*sino[val,s]
+  }
 }
-
 
 filt_sinoA %>% 
   as.matrix()
@@ -140,8 +141,10 @@ filt_sinoA %>%
 write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
 
 
-for(val in 1:number_cols){
-                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+for(val in 1:nRows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoB[val,s] <- m1[1+val,2]*sino[val,s]
+  }
 }
 
 filt_sinoB %>% 
@@ -160,7 +163,7 @@ write_csv(m2, "raw_data/m2.csv")
 Read in the FBP image!!!
 
 ```{r}
- p <- read.csv("C:/Users/capa01/Documents/R-Projects/ANN_work/clean_data/FBP1-KW.csv")
+ p <- read.csv("clean_data/FBP1.csv")
 p <- p %>% as.matrix()
 image(p)
 ```
