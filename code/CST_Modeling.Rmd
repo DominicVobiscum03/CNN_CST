@@ -13,7 +13,7 @@ knitr::opts_knit$set(root.dir=normalizePath(".."))
 Import the tidyverse, Matrix and ggplot2 packages
 
 ```{r}
-library(tidyverse)
+library(tidymodels)
 library(Matrix)
 library(ggplot2)
 ```
