@@ -1,6 +1,6 @@
 ---
 title: "ANN"
-author: "Slakes"
+author: "Karsten and Slakes"
 date: "2023-06-28"
 output: html_document
 ---
@@ -78,8 +78,8 @@ nn <- list()
 nn$weights <- list()
 
 set.seed(222) 
-nn$weights[[1]] <- matrix(runif(1,min=0,max=1), nrow = 16, ncol = 2)
-nn$weights[[2]] <- matrix(runif(1,min=0,max=1), nrow = 3, ncol = 1)
+nn$weights[[1]] <- matrix(runif(1,min=0,max=1), nrow = 91, ncol = 4)
+nn$weights[[2]] <- matrix(runif(1,min=0,max=1), nrow = 5, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
   # compute shift of sinogram detector positions for each projection based on current image pixel
@@ -110,23 +110,30 @@ for (i in 1:length(output)){
                        )
                  ) 
   ############################################################ NEURAL NET
-  nn <-neuralnet(f, data, hidden = 2,
-                startweights = nn$weights,
-                lifesign = "minimal")
+  nn <-neuralnet(f, data, hidden = 4,
+                startweights = nn$weights)
   error[i] <- nn$result.matrix[1]
+  if(error[i]==min(error)){
+    m1 <- nn$weights[[1]][[1]]
+    m2 <- nn$weights[[1]][[2]]
+    m1 <- m1 %>% as.data.frame()
+    m2 <- m2 %>% as.data.frame()
   }
-plot(nn, rep = "best")
+  print(i)
+}
 # Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the
 # weights from the second layer
-m1 <- nn$weights[[1]][[1]]
-m2 <- nn$weights[[1]][[2]]
-m1 <- m1 %>% as.data.frame()
-m2 <- m2 %>% as.data.frame()
+#m1 <- nn$weights[[1]][[1]]
+#m2 <- nn$weights[[1]][[2]]
+#m1 <- m1 %>% as.data.frame()
+#m2 <- m2 %>% as.data.frame()
 ```
 
 ```{r}
 filt_sinoA <- sino
 filt_sinoB <- sino
+filt_sinoC <- sino
+filt_sinoD <- sino
 nRows <- nrow(sino)
 
 for(val in 1:nRows){
@@ -152,10 +159,31 @@ filt_sinoB %>%
 
 write_csv(filt_sinoB, "raw_data/filtsinob.csv")
 
+for(val in 1:nRows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoC[val,s] <- m1[1+val,3]*sino[val,s]
+  }
+}
+
+filt_sinoC %>% 
+  as.matrix()
+
+write_csv(filt_sinoA, "raw_data/filtsinoc.csv")
+
+
+for(val in 1:nRows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoD[val,s] <- m1[1+val,4]*sino[val,s]
+  }
+}
+
+filt_sinoD %>% 
+  as.matrix()
+
+write_csv(filt_sinoB, "raw_data/filtsinod.csv")
 
 write_csv(m1, "raw_data/m1.csv")
 write_csv(m2, "raw_data/m2.csv")
-
 
 ```
 
