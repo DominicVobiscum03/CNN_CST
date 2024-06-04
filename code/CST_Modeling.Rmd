@@ -13,9 +13,10 @@ knitr::opts_knit$set(root.dir=normalizePath(".."))
 Import the tidyverse, Matrix and ggplot2 packages
 
 ```{r}
-library(tidyverse)
+library(tidymodels)
 library(Matrix)
 library(ggplot2)
+library(readr)
 ```
 
 Define size of image plane
@@ -223,7 +224,7 @@ for (k in 1:ndet){
 plot the scattergram for the last detector
 
 ```{r}
-plot(ScatGram$Energy, ScatGram[,ndet+1])
+plot(ScatGram$Energy, ScatGram[,13])
 
 ```
 
