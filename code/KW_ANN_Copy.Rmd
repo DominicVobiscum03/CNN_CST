@@ -121,7 +121,7 @@ for (i in 1:length(output)){
   ############################################################ NEURAL NET
   nn <-neuralnet(f, data, hidden = 4,
                 startweights = nn$weights)
-  error[i] <- nn$result.matrix[1]
+  #error[i] <- nn$result.matrix[1]
   #if(error[i]==min(error)){
     #m1 <- nn$weights[[1]][[1]]
     #m2 <- nn$weights[[1]][[2]]
@@ -203,7 +203,19 @@ Read in the FBP image!!!
 ```{r}
  p <- read.csv("clean_data/FBP1.csv")
 p <- p %>% as.matrix()
+p <- p[,-c(1)]
 image(p)
+```
+```{r}
+image(as.matrix(m))
+mse = 0
+for(a in 1:nrow(p))
+  for(b in 1:ncol(p))
+  {
+    mse <- mse + (m[a,b]-p[a,b])^2
+  }
+mse <- mse/(nrow(p)*ncol(p))
+mse
 ```
 
 
