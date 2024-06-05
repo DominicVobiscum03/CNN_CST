@@ -54,8 +54,8 @@ for (i in 1:ncol(v)){
      z <- c(z, v[1, i])
      output <- c(output, v[3, i]) 
    }
-x <- (x-(max(x)+1)/2) # make x and z correct for the shift flip sum code
-z <- (z-(max(z)+1)/2) # origin referenced coordinates
+#x <- (x-(max(x)+1)/2) # make x and z correct for the shift flip sum code
+#z <- (z-(max(z)+1)/2) # origin referenced coordinates
 ```
 
 Train neural net
@@ -64,6 +64,7 @@ Train neural net
 ```{r}
 # read in sinogram data
 sino <- read.csv('raw_data/SO_90sino.csv')
+ranges <- sino[,c(1)]
 sino <- sino[, -c(1)]
 # number of projections
 nAngle  <- nrow(sino)
@@ -78,22 +79,21 @@ degree <- data.frame(angle = seq(0,nAngle-1)*angleStep)
 nn <- list()
 nn$weights <- list()
 
-nn$weights[[1]] <- matrix(0, nrow = 16, ncol = 2)
+set.seed(333)
+nn$weights[[1]] <- matrix(0, nrow = 91, ncol = 2)
 nn$weights[[2]] <- matrix(0, nrow = 3, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
    # compute shift of sinogram detector positions for each projection based on current image pixel
    degree$pixel <- round(x[i]*cos(pi*degree$angle/180) + z[i]*sin(pi*degree$angle/180))
-   # transpose the sinogram
-   tsino <- t(sino)
    # create a space with dimension tsino
-   ssino <- tsino   
+   ssino <- sino   
 
    ######################################################## SHIFT SUM FLIP 
    # Perform shift according to dShift
    for (j in 1:nAngle){ 
-      shift_amount <- degree$pixel[j]
-      shifted_row <- circshift(tsino[j, ], shift_amount)
+      shift_amount <- -degree$pixel[j]
+      shifted_row <- circshift(as.vector(sino[j, ]), shift_amount)
       ssino[j, ] <- shifted_row
       }
    # perform summation
@@ -114,27 +114,31 @@ for (i in 1:length(output)){
                          )
                    ) 
    ############################################################ NEURAL NET
-   nn <-neuralnet(f, data, hidden = 2,
+   nn <-neuralnet(f, data, hidden = 3,
                   startweights = nn$weights)
    error[i] <- nn$result.matrix[1]
-   }
+ if(error[i]==min(error)){
+    m1 <- nn$weights[[1]][[1]]
+    m2 <- nn$weights[[1]][[2]]
+    m1 <- m1 %>% as.data.frame()
+    m2 <- m2 %>% as.data.frame()
+  }
+  print(i)
+}
 
 plot(nn, rep = "best")
-# Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the
-# weights from the second layer
-m1 <- nn$weights[[1]][[1]]
-m2 <- nn$weights[[1]][[2]]
-m1 <- m1 %>% as.data.frame()
-m2 <- m2 %>% as.data.frame()
 ```
 
 ```{r}
 filt_sinoA <- sino
 filt_sinoB <- sino
-number_cols <- ncol(sino)
+filt_sinoC <- sino
+numrows <- nrow(sino)
 
-for(val in 1:number_cols){
-                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+for(val in 1:numrows){
+   for(s in 1:length(sino[val,])){
+    filt_sinoA[val,s] <- m1[1+val,1]*sino[val,s]
+  }
 }
 
 filt_sinoA %>% 
@@ -143,14 +147,28 @@ filt_sinoA %>%
 write_csv(filt_sinoA, "raw_data/filtsinoa-SO.csv")
 
 
-for(val in 1:number_cols){
-                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+for(val in 1:numrows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoB[val,s] <- m1[1+val,2]*sino[val,s]
+  }
 }
+
 
 filt_sinoB %>% 
   as.matrix()
 
 write_csv(filt_sinoB, "raw_data/filtsinob-SO.csv")
+
+for(val in 1:numrows){
+  for(s in 1:length(sino[val,])){
+    filt_sinoC[val,s] <- m1[1+val,3]*sino[val,s]
+  }
+}
+
+filt_sinoC %>% 
+  as.matrix()
+
+write_csv(filt_sinoC, "raw_data/filtsinoc-SO.csv")
 
 
 write_csv(m1, "raw_data/m1-SO.csv")
@@ -164,6 +182,7 @@ Read in the FBP image!!!
 ```{r}
  p <- read.csv("clean_data/FBP1-SO.csv")
 p <- p %>% as.matrix()
+p <- p[,-1]
 image(p)
 ```
 
