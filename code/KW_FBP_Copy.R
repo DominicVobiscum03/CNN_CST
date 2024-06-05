@@ -2,6 +2,11 @@ library(PET)
 library(png)
 knitr::opts_knit$set(root.dir='Z:/Research/ANN Work')
 
+test <- read.csv("Z:/Research/ANN Work/raw_data/65sin.csv")
+test <- test[,-c(1)]
+test <- as.matrix(test)
+image(test)
+
 #Read in the Sinograms
 filt1 <- read.csv("raw_data/filtsinoa.csv")
 filt1 <- as.matrix(filt1)
@@ -18,7 +23,6 @@ image(filt3)
 filt4 <- read.csv("raw_data/filtsinod.csv")
 filt4 <- as.matrix(filt4)
 image(filt4)
-
 
 
 # Back Projection
@@ -40,8 +44,8 @@ filt4data <- FBP4$irData
 image(filt4data)
 
 # Read in the biases
-m1 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m1 - Copy.csv"))
-m2 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m2 - Copy.csv"))
+m1 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m1.csv"))
+m2 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m2.csv"))
 
 b1 <- matrix(m1[1,1], 64, 64)
 b2 <- matrix(m1[1,2], 64, 64)
@@ -97,15 +101,14 @@ for (i in 1:nrow(filtd)){
 image(filtsd)
 
 
-
-filtsa <- filtsa*w1
-filtsb <- filtsb*w2
-filtsc <- filtsc*w3
-filtsd <- filtsd*w4
-
+wfiltsa <- filtsa*w1
+wfiltsb <- filtsb*w2
+wfiltsc <- filtsc*w3
+wfiltsd <- filtsd*w4
 
 
-filts <- filtsa + filtsb + filtsc + filtsd
+
+filts <- wfiltsa + wfiltsb + wfiltsc + wfiltsd
 image(filts)
 
 
@@ -123,4 +126,4 @@ for (i in 1:nrow(filts2)){
 
 image(filtf)
 
-write.csv(filtf, "clean_data/FBP1.csv")
+write.csv(filtf, "Z:/Research/ANN Work/clean_data/FBP1.csv")
