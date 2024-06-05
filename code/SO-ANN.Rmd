@@ -32,9 +32,10 @@ I have been working to figure out how to train this and have the error print ite
 
 ```{r}
 # read in reference data
-m <- read.csv("raw_data/65ref.csv")
+m <- read.csv("raw_data/SO_64ref.csv")
 m <- m[, -c(1)]
 v <- matrix(nrow = 3, ncol = 0)
+
 # Populate 'v' with columns, rows, and values from 'm'
 for (i in 1:nrow(m)){
   for (j in 1:ncol(m)){
@@ -59,16 +60,15 @@ z <- (z-(max(z)+1)/2) # origin referenced coordinates
 
 Train neural net
 
-Hello World
 
 ```{r}
 # read in sinogram data
-sino <- read.csv('raw_data/65sin.csv')
+sino <- read.csv('raw_data/SO_90sino.csv')
 sino <- sino[, -c(1)]
 # number of projections
-nAngle  <- ncol(sino)
+nAngle  <- nrow(sino)
 # number of detectors
-nDetect <- nrow(sino)
+nDetect <- ncol(sino)
 # Degrees between projections
 angleStep <- 180/(nAngle-1) 
 # compute angle of each projection in sinogram
@@ -162,7 +162,7 @@ write_csv(m2, "raw_data/m2-SO.csv")
 Read in the FBP image!!!
 
 ```{r}
- p <- read.csv("C:/Users/capa01/Documents/R-Projects/ANN_work/clean_data/FBP1-SO.csv")
+ p <- read.csv("clean_data/FBP1-SO.csv")
 p <- p %>% as.matrix()
 image(p)
 ```
