@@ -34,6 +34,13 @@ I have been working to figure out how to train this and have the error print ite
 # read in reference data
 m <- read.csv("raw_data/SO_64ref.csv")
 m <- m[, -c(1)]
+for(x in 1:ncol(m)){
+  for(y in 1:nrow(m)){
+    if(m[x,y]==0.001)
+      m[x,y] <- 0
+  }
+}
+
 v <- matrix(nrow = 3, ncol = 0)
 
 # Populate 'v' with columns, rows, and values from 'm'

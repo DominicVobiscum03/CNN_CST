@@ -31,7 +31,7 @@ It is important to note that all the "zeros" have the value 0.001. I don't know 
 I have been working to figure out how to train this and have the error print iteratively so we can see if it is improving. I have not figured this out yet.
 ```{r}
 # read in reference data
-m <- read.csv("raw_data/65ref.csv")
+m <- read_csv("raw_data/65ref.csv")
 m <- m[, -c(1)]
 for(x in 1:ncol(m)){
   for(y in 1:nrow(m)){
