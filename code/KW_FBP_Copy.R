@@ -27,19 +27,19 @@ image(filt4)
 
 # Back Projection
 
-FBP1 <- iradon(filt1, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP1 <- iradon(filt1, XSamples = 64, YSamples = 64, mode = "BF")
 filt1data <- FBP1$irData
 image(filt1data)
 
-FBP2 <- iradon(filt2, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP2 <- iradon(filt2, XSamples = 64, YSamples = 64, mode = "BF")
 filt2data <- FBP2$irData
 image(filt2data)
 
-FBP3 <- iradon(filt3, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP3 <- iradon(filt3, XSamples = 64, YSamples = 64, mode = "BF")
 filt3data <- FBP3$irData
 image(filt3data)
 
-FBP4 <- iradon(filt4, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP4 <- iradon(filt4, XSamples = 64, YSamples = 64, mode = "BF")
 filt4data <- FBP4$irData
 image(filt4data)
 
