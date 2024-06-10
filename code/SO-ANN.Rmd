@@ -1,6 +1,6 @@
 ---
 title: "ANN"
-author: "Dominic Cugliari"
+author: "Slakes and Sydney"
 date: "2024-05-30"
 output: html_document
 ---
@@ -223,6 +223,36 @@ write_csv(m1, "raw_data/m1-SO.csv")
 write_csv(m2, "raw_data/m2-SO.csv")
 
 ```
+
+##Convolve function version
+```{r}
+filt_sinoA <- sino
+filt_sinoB <- sino
+number_cols <- ncol(sino)
+
+for(val in 1:number_cols){
+                    filt_sinoA[,val] <- convolve(sino[,val], m1[2:91,1], type ="circular")
+}
+
+filt_sinoA %>% 
+  as.matrix()
+
+write_csv(filt_sinoA, "raw_data/filtsinoa-SO.csv")
+
+
+for(val in 1:number_cols){
+                   filt_sinoB[,val] <- convolve(sino[,val], m1[2:91,2], type ="circular")
+}
+
+filt_sinoB %>% 
+  as.matrix()
+
+write_csv(filt_sinoB, "raw_data/filtsinob-SO.csv")
+
+write_csv(m1, "raw_data/m1-SO.csv")
+write_csv(m2, "raw_data/m2-SO.csv")
+```
+
 
 Read in the FBP image!!!
 

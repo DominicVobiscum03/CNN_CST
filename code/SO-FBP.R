@@ -17,13 +17,14 @@ image(filt2)
 
 # Back Projection
 
-FBP1 <- iradon(filt1, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP1 <- iradon(filt1, XSamples = 64, YSamples = 64, mode = "BF")
 filt1data <- FBP1$irData
 image(filt1data)
 
-FBP2 <- iradon(filt2, XSamples = 64, YSamples = 64, mode = "CNF")
+FBP2 <- iradon(filt2, XSamples = 64, YSamples = 64, mode = "BF")
 filt2data <- FBP2$irData
 image(filt2data)
+
 
 #FBP3 <- iradon(filt3, XSamples = 64, YSamples = 64, mode = "CNF")
 #filt3data <- FBP3$irData
@@ -46,17 +47,17 @@ w2 <- m2[3,1]
 
 bf <- matrix(m2[1,1], 64, 64)
 
-#Subtract biases
+ #Subtract biases
 
-filta <- filt1data + b1
-filtb <- filt2data + b2
+filta <- filt1data - b1
+filtb <- filt2data - b2
 #filtc <- filt3data + b3
 
 
 filtsa <- matrix(nrow = 64, ncol = 64)
 for (i in 1:nrow(filta)){
   for (j in 1:ncol(filta)){
-    filtsa[i,j] <- -1/(1+exp(-filta[i,j]))
+    filtsa[i,j] <- 1/(1+exp(-filta[i,j]))
   }
 }
 
@@ -65,7 +66,7 @@ image(filtsa)
 filtsb <- matrix(nrow = 64, ncol = 64)
 for (i in 1:nrow(filtb)){
   for (j in 1:ncol(filtb)){
-    filtsb[i,j] <- -1/(1+exp(-(filtb[i,j])))
+    filtsb[i,j] <- 1/(1+exp(-(filtb[i,j])))
   }
 }
 image(filtsb)
@@ -73,7 +74,7 @@ image(filtsb)
 #filtsc <- matrix(nrow = 64, ncol = 64)
 #for (i in 1:nrow(filtc)){
  # for (j in 1:ncol(filtc)){
-  #  filtsc[i,j] <- -1/(1+exp(-(filtc[i,j])))
+  #  filtsc[i,j] <- 1/(1+exp(-(filtc[i,j])))
 #  }
 #}
 #image(filtsc)
@@ -100,7 +101,7 @@ image(filts2)
 filtf <- matrix(nrow = 64, ncol = 64)
 for (i in 1:nrow(filts2)){
   for (j in 1:ncol(filts2)){
-    filtf[i,j] <- -1/(1+exp(-(filts2[i,j])))
+    filtf[i,j] <- 1/(1+exp(-(filts2[i,j])))
   }
 }
 
