@@ -63,14 +63,17 @@ for (i in 1:ncol(v)){
 }
 xv<- as.vector(as.numeric(x))
 zv<- as.vector(as.numeric(z))
-xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
-zv <- (zv-(max(zv)+1)/2) # origin referenced coordinates
+xv <- (xv-max(xv)/2) # make x and z correct for the shift flip sum code
+zv <- -1*(zv-max(zv)/2) # origin referenced coordinates
 ```
 
 
 
 Train neural net
 ```{r}
+normal <- function(p) {
+  return ((p - min(p)) / (max(p) - min(p)))
+}
 # read in sinogram data
 sino <- read.csv('raw_data/65sin_90x90.csv')
 ranges <- sino[,c(1)]
@@ -82,15 +85,15 @@ nDetect <- ncol(sino)
 # Degrees between projections
 angleStep <- 180/(nAngle) # changed from nAngle-1
 # compute angle of each projection in sinogram
-degree <- data.frame(angle = seq(0,nAngle-1)*angleStep) 
+degree <- data.frame(angle = seq(0,nAngle-1)*angleStep +1) 
 
 # initialize weights
 nn <- list()
 nn$weights <- list()
 
 set.seed(222) 
-nn$weights[[1]] <- matrix(runif(1,min=0,max=1), nrow = 91, ncol = 4)
-nn$weights[[2]] <- matrix(runif(1,min=0,max=1), nrow = 5, ncol = 1)
+nn$weights[[1]] <- matrix(runif(728,min=0,max=2), nrow = 91, ncol = 8)
+nn$weights[[2]] <- matrix(runif(9,min=0,max=2), nrow = 9, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
   # compute shift of sinogram detector positions for each projection based on current image pixel
@@ -100,7 +103,7 @@ for (i in 1:length(output)){
   ######################################################## SHIFT SUM FLIP 
   # Perform shift according to degree$pixel
   for (j in 1:nAngle){ 
-    shift_amount <- 0 - degree$pixel[j]
+    shift_amount <- -1*degree$pixel[j]
     shifted_row <- circshift(as.vector(sino[j, ]), shift_amount)
     ssino[j, ] <- shifted_row
   }
@@ -108,7 +111,7 @@ for (i in 1:length(output)){
   f_vector <- colSums(ssino) 
   # perform flip
   z_vector <- rev(f_vector)  
-   
+  z_vector <- normal(z_vector)
   ################################################################## DATA
   data <- as_tibble(c(z_vector, output[i]))
   # Define names of the columns for the data to used by function 
@@ -121,7 +124,7 @@ for (i in 1:length(output)){
                        )
                  ) 
   ############################################################ NEURAL NET
-  nn <-neuralnet(f, data, hidden = 4,
+  nn <-neuralnet(f, data, hidden = 8,
                 startweights = nn$weights)
   error[i] <- nn$result.matrix[1]
   #if(error[i]==min(error)){
@@ -146,53 +149,62 @@ filt_sinoA <- sino
 filt_sinoB <- sino
 filt_sinoC <- sino
 filt_sinoD <- sino
-nRows <- nrow(sino)
+image(as.matrix(sino))
 
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoA[val,s] <- m1[1+val,1]*sino[val,s]
-  }
+
+for(val in 1:nrow(sino)){
+                    filt_sinoA[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,1], type ="circular")
 }
-
-filt_sinoA %>% 
-  as.matrix()
-
 write_csv(filt_sinoA, "raw_data/filtsinoa.csv")
+image(as.matrix(filt_sinoA))
 
-
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoB[val,s] <- m1[1+val,2]*sino[val,s]
-  }
+for(val in 1:nrow(sino)){
+                    filt_sinoB[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,2], type ="circular")
 }
-
-filt_sinoB %>% 
-  as.matrix()
-
 write_csv(filt_sinoB, "raw_data/filtsinob.csv")
+image(as.matrix(filt_sinoB))
 
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoC[val,s] <- m1[1+val,3]*sino[val,s]
-  }
+for(val in 1:nrow(sino)){
+                    filt_sinoC[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,3], type ="circular")
 }
-
-filt_sinoC %>% 
-  as.matrix()
-
 write_csv(filt_sinoC, "raw_data/filtsinoc.csv")
+image(as.matrix(filt_sinoC))
 
 
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoD[val,s] <- m1[1+val,4]*sino[val,s]
-  }
+for(val in 1:nrow(sino)){
+                    filt_sinoD[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,4], type ="circular")
 }
-
-filt_sinoD %>% 
-  as.matrix()
-
 write_csv(filt_sinoD, "raw_data/filtsinod.csv")
+image(as.matrix(filt_sinoD))
+
+filt_sinoE <- sino
+filt_sinoF <- sino
+filt_sinoG <- sino
+filt_sinoH <- sino
+
+for(val in 1:nrow(sino)){
+                    filt_sinoE[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,5], type ="circular")
+}
+write_csv(filt_sinoE, "raw_data/filtsinoe.csv")
+image(as.matrix(filt_sinoE))
+
+for(val in 1:nrow(sino)){
+                    filt_sinoF[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,6], type ="circular")
+}
+write_csv(filt_sinoF, "raw_data/filtsinof.csv")
+image(as.matrix(filt_sinoF))
+
+for(val in 1:nrow(sino)){
+                    filt_sinoG[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,7], type ="circular")
+}
+write_csv(filt_sinoG, "raw_data/filtsinog.csv")
+image(as.matrix(filt_sinoG))
+
+for(val in 1:nrow(sino)){
+                    filt_sinoH[,val] <- convolve(unlist(sino[,val],use.names=FALSE), m1[2:91,8], type ="circular")
+}
+write_csv(filt_sinoH, "raw_data/filtsinoh.csv")
+image(as.matrix(filt_sinoH))
 
 write_csv(m1, "raw_data/m1.csv")
 write_csv(m2, "raw_data/m2.csv")
