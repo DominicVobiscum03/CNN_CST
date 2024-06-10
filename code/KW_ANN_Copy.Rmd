@@ -31,16 +31,8 @@ It is important to note that all the "zeros" have the value 0.001. I don't know 
 I have been working to figure out how to train this and have the error print iteratively so we can see if it is improving. I have not figured this out yet.
 ```{r}
 # read in reference data
-m <- read_csv("raw_data/65ref.csv")
+m <- read_csv("raw_data/phantom.csv")
 m <- m[, -c(1)]
-
-# Replace 0.001 with 0
-for(x in 1:ncol(m)){
-  for(y in 1:nrow(m)){
-    if(m[x,y]==0.001)
-      m[x,y] <- 0
-  }
-}
 
 v <- matrix(nrow = 3, ncol = 0)
 # Populate 'v' with columns, rows, and values from 'm'
@@ -75,8 +67,7 @@ normal <- function(p) {
   return ((p - min(p)) / (max(p) - min(p)))
 }
 # read in sinogram data
-sino <- read.csv('raw_data/65sin_90x90.csv')
-ranges <- sino[,c(1)]
+sino <- read.csv('raw_data/radontransform.csv')
 sino <- sino[, -c(1)]
 # number of projections
 nAngle  <- nrow(sino)
@@ -92,8 +83,12 @@ nn <- list()
 nn$weights <- list()
 
 set.seed(222) 
-nn$weights[[1]] <- matrix(runif(728,min=0,max=2), nrow = 91, ncol = 8)
-nn$weights[[2]] <- matrix(runif(9,min=0,max=2), nrow = 9, ncol = 1)
+nn$weights[[1]] <- matrix(runif(1464,min=0,max=0.01), nrow = 183, ncol = 8)
+nn$weights[[1]][90,] <- rep(0.25,8)
+nn$weights[[1]][91,] <- rep(0.25,8)
+nn$weights[[1]][89,] <- rep(-0.1,8)
+nn$weights[[1]][92,] <- rep(-0.1,8)
+nn$weights[[2]] <- matrix(runif(9,min=0,max=3), nrow = 9, ncol = 1)
 error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
   # compute shift of sinogram detector positions for each projection based on current image pixel
@@ -111,9 +106,8 @@ for (i in 1:length(output)){
   f_vector <- colSums(ssino) 
   # perform flip
   z_vector <- rev(f_vector)  
-  z_vector <- normal(z_vector)
   ################################################################## DATA
-  data <- as_tibble(c(z_vector, output[i]))
+  data <- t(as_tibble(c(unlist(z_vector,use.names=FALSE), unlist(output[i],use.names=FALSE))))
   # Define names of the columns for the data to used by function 
   ANN_names <- c(paste0("z",(as.character(c(seq(1:nDetect))))),"o") 
   colnames(data) <- ANN_names

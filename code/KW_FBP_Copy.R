@@ -1,10 +1,36 @@
 library(PET)
 library(png)
 
+
+phan <- as.matrix(phantom(n=128, design="B"))
+image(phan)
+write.csv(phan, "Z:/Research/ANN Work/raw_data/phantom.csv")
+
+rad <- as.matrix(radon(phan)$rData)
+image(rad)
+write.csv(rad, "Z:/Research/ANN Work/raw_data/radontransform.csv")
+
+
+
+
+
+
+FBP <- iradon(rad, XSamples = 128, YSamples = 128, mode = "BF")
+filtdata <- FBP$irData
+image(filtdata)
+
+
+#---------------------------------
+image <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/65ref.csv"))
+sinogram1 <-radon(image)
+
 test <- read.csv("Z:/Research/ANN Work/raw_data/65sin.csv")
 test <- test[,-c(1)]
 test <- as.matrix(test)
 image(test)
+#---------------------------------
+
+
 
 #Read in the Sinograms
 filt1 <- read.csv("Z:/Research/ANN Work/raw_data/filtsinoa.csv")
@@ -41,35 +67,35 @@ image(filt8)
 
 # Back Projection
 
-FBP1 <- iradon(filt1, XSamples = 64, YSamples = 64, mode = "BF")
+FBP1 <- iradon(filt1, XSamples = 128, YSamples = 128, mode = "BF")
 filt1data <- FBP1$irData
 image(filt1data)
 
-FBP2 <- iradon(filt2, XSamples = 64, YSamples = 64, mode = "BF")
+FBP2 <- iradon(filt2, XSamples = 128, YSamples = 128, mode = "BF")
 filt2data <- FBP2$irData
 image(filt2data)
 
-FBP3 <- iradon(filt3, XSamples = 64, YSamples = 64, mode = "BF")
+FBP3 <- iradon(filt3, XSamples = 128, YSamples = 128, mode = "BF")
 filt3data <- FBP3$irData
 image(filt3data)
 
-FBP4 <- iradon(filt4, XSamples = 64, YSamples = 64, mode = "BF")
+FBP4 <- iradon(filt4, XSamples = 128, YSamples = 128, mode = "BF")
 filt4data <- FBP4$irData
 image(filt4data)
 
-FBP5 <- iradon(filt5, XSamples = 64, YSamples = 64, mode = "BF")
+FBP5 <- iradon(filt5, XSamples = 128, YSamples = 128, mode = "BF")
 filt5data <- FBP5$irData
 image(filt5data)
 
-FBP6 <- iradon(filt6, XSamples = 64, YSamples = 64, mode = "BF")
+FBP6 <- iradon(filt6, XSamples = 128, YSamples = 128, mode = "BF")
 filt6data <- FBP6$irData
 image(filt6data)
 
-FBP7 <- iradon(filt7, XSamples = 64, YSamples = 64, mode = "BF")
+FBP7 <- iradon(filt7, XSamples = 128, YSamples = 128, mode = "BF")
 filt7data <- FBP7$irData
 image(filt7data)
 
-FBP8 <- iradon(filt8, XSamples = 64, YSamples = 64, mode = "BF")
+FBP8 <- iradon(filt8, XSamples = 128, YSamples = 128, mode = "BF")
 filt8data <- FBP8$irData
 image(filt8data)
 
@@ -77,14 +103,14 @@ image(filt8data)
 m1 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m1.csv"))
 m2 <- as.matrix(read.csv("Z:/Research/ANN Work/raw_data/m2.csv"))
 
-b1 <- matrix(m1[1,1], 64, 64)
-b2 <- matrix(m1[1,2], 64, 64)
-b3 <- matrix(m1[1,3], 64, 64)
-b4 <- matrix(m1[1,4], 64, 64)
-b5 <- matrix(m1[1,5], 64, 64)
-b6 <- matrix(m1[1,6], 64, 64)
-b7 <- matrix(m1[1,7], 64, 64)
-b8 <- matrix(m1[1,8], 64, 64)
+b1 <- matrix(m1[1,1], 128, 128)
+b2 <- matrix(m1[1,2], 128, 128)
+b3 <- matrix(m1[1,3], 128, 128)
+b4 <- matrix(m1[1,4], 128, 128)
+b5 <- matrix(m1[1,5], 128, 128)
+b6 <- matrix(m1[1,6], 128, 128)
+b7 <- matrix(m1[1,7], 128, 128)
+b8 <- matrix(m1[1,8], 128, 128)
 
 w1 <- m2[2,1]
 w2 <- m2[3,1]
@@ -95,7 +121,7 @@ w6 <- m2[7,1]
 w7 <- m2[8,1]
 w8 <- m2[9,1]
 
-bf <- matrix(m2[1,1], 64, 64)
+bf <- matrix(m2[1,1], 128, 128)
 
 #Subtract biases
 
@@ -109,67 +135,67 @@ filtg <- filt7data + b7
 filth <- filt8data + b8
 
 
-filtsa <- matrix(nrow = 64, ncol = 64)
+filtsa <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filta)){
   for (j in 1:ncol(filta)){
-    filtsa[i,j] <- -1/(1+exp(-filta[i,j]))
+    filtsa[i,j] <- 1/(1+exp(-filta[i,j]))
   }
 }
 
 image(filtsa)
 
-filtsb <- matrix(nrow = 64, ncol = 64)
+filtsb <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filtb)){
   for (j in 1:ncol(filtb)){
-    filtsb[i,j] <- -1/(1+exp(-(filtb[i,j])))
+    filtsb[i,j] <- 1/(1+exp(-(filtb[i,j])))
   }
 }
 image(filtsb)
 
-filtsc <- matrix(nrow = 64, ncol = 64)
+filtsc <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filtc)){
   for (j in 1:ncol(filtc)){
-    filtsc[i,j] <- -1/(1+exp(-(filtc[i,j])))
+    filtsc[i,j] <- 1/(1+exp(-(filtc[i,j])))
   }
 }
 image(filtsc)
 
-filtsd <- matrix(nrow = 64, ncol = 64)
+filtsd <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filtd)){
   for (j in 1:ncol(filtd)){
-    filtsd[i,j] <- -1/(1+exp(-(filtd[i,j])))
+    filtsd[i,j] <- 1/(1+exp(-(filtd[i,j])))
   }
 }
 image(filtsd)
 
-filtse <- matrix(nrow = 64, ncol = 64)
+filtse <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filte)){
   for (j in 1:ncol(filte)){
-    filtse[i,j] <- -1/(1+exp(-(filte[i,j])))
+    filtse[i,j] <- 1/(1+exp(-(filte[i,j])))
   }
 }
 image(filtse)
 
-filtsf <- matrix(nrow = 64, ncol = 64)
+filtsf <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filtf)){
   for (j in 1:ncol(filtf)){
-    filtsf[i,j] <- -1/(1+exp(-(filtf[i,j])))
+    filtsf[i,j] <- 1/(1+exp(-(filtf[i,j])))
   }
 }
 image(filtsf)
 
-filtsg <- matrix(nrow = 64, ncol = 64)
+filtsg <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filtg)){
   for (j in 1:ncol(filtg)){
-    filtsg[i,j] <- -1/(1+exp(-(filtg[i,j])))
+    filtsg[i,j] <- 1/(1+exp(-(filtg[i,j])))
   }
 }
 image(filtsg)
 
-filtsh <- matrix(nrow = 64, ncol = 64)
+filtsh <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filth)){
   for (j in 1:ncol(filth)){
-    filtsh[i,j] <- -1/(1+exp(-(filth[i,j])))
+    filtsh[i,j] <- 1/(1+exp(-(filth[i,j])))
   }
 }
 image(filtsh)
@@ -194,10 +220,10 @@ image(filts)
 filts2 <- filts + bf
 image(filts2)
 
-filtfull <- matrix(nrow = 64, ncol = 64)
+filtfull <- matrix(nrow = 128, ncol = 128)
 for (i in 1:nrow(filts2)){
   for (j in 1:ncol(filts2)){
-    filtfull[i,j] <- -1/(1+exp(-(filts2[i,j])))
+    filtfull[i,j] <- 1/(1+exp(-(filts2[i,j])))
   }
 }
 
