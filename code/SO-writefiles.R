@@ -16,3 +16,8 @@ sino <- radon(pic)
 #Write sinogram into a csv
 sino <- as.matrix(sino$rData)
 write.csv(sino, "raw_data/SO-sinogram.csv")
+
+
+#backproject sinogram
+FBP <- iradon(sino, XSamples = 64, YSamples = 64, mode = "BF")
+image(matrix(FBP))

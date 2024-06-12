@@ -188,27 +188,49 @@ write_csv(m2, "raw_data/m2-SO.csv")
 ##Convolve function version
 ```{r}
 filt_sinoA <- sino
+filt_sinoA2 <- sino
 filt_sinoB <- sino
+filt_sinoB2 <- sino
 number_cols <- ncol(sino)
 
+#filt_sinoA <- cbind(filt_sinoA, matrix(0, nrow = 181, 90))
+#sino <-cbind(sino, matrix(0, nrow = 181, 90))
+
+            
 for(val in 1:number_cols){
-                    filt_sinoA[,val] <- convolve(sino[,val], m1[1:91,1], type ="circular")
+                    filt_sinoA[1:91,val] <- convolve(sino[1:91,val], m1[2:92,1], type ="circular")
+                    filt_sinoA2[91:181, val] <- convolve(sino[91:181, val], m1[2:92, 1], type = "circular")
 }
 
 filt_sinoA %>% 
   as.matrix()
 
+filt_sinoA2 %>% 
+  as.matrix()
+
+filt_sinoA_final <- cbind(filt_sinoA, filt_sinoA2)
+  
 write_csv(filt_sinoA, "raw_data/filtsinoa2-SO.csv")
+write_csv(filt_sinoA2, "raw_data/filtsinoa2b-SO.csv")
+write_csv(filt_sinoA_final, "raw_data/filtsinoa-final-SO.csv")
 
 
 for(val in 1:number_cols){
-                   filt_sinoB[,val] <- convolve(sino[,val], m1[1:91,2], type ="circular")
-}
+                   filt_sinoB[1:91,val] <- convolve(sino[1:91,val], m1[2:92,2], type = "circular") 
+                   filt_sinoB2[91:181, val] <- convolve(sino[91:181, val], m1[2:92, 2], type = "circular")
+} #removed m1[1:91,2]
 
 filt_sinoB %>% 
   as.matrix()
 
+filt_sinoB2 %>%
+  as.matrix()
+
+filt_sinoB_final <- cbind(filt_sinoB, filt_sinoB2)
+
 write_csv(filt_sinoB, "raw_data/filtsinob2-SO.csv")
+write_csv(filt_sinoB2, "raw_data/filtsinob2b-SO.csv")
+write_csv(filt_sinoB_final, "raw_data/filtsinob-final-SO.csv")
 
 write_csv(m1, "raw_data/m1-SO-2.csv")
 write_csv(m2, "raw_data/m2-SO-2.csv")

@@ -109,7 +109,3 @@ for (i in 1:nrow(filts2)){
 image(filtf)
 
 write.csv(filtf, "clean_data/FBP1-SO.csv")
-
-
-
-
