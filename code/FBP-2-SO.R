@@ -271,8 +271,6 @@ filt1b <- read.csv("raw_data/filtsinoa2b-SO.csv")
 filt1b <- as.matrix(filt1b[91:181,])
 image(filt1b)
 
-image(filt1a+filt1b)
-
 #combine filter 1
 filt1comb <- rbind(filt1a, filt1b)
 filt1comb <- as.matrix(filt1comb)
@@ -287,8 +285,6 @@ image(filt2a)
 filt2b <- read.csv("raw_data/filtsinob2b-SO.csv")
 filt2b <- as.matrix(filt2b[91:181,])
 image(filt2b)
-
-image(filt2a + filt2b)
 
 #combine filter 2
 filt2comb <- rbind(filt2a, filt2b)

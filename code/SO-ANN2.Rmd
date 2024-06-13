@@ -243,4 +243,3 @@ p <- p %>% as.matrix()
 p <- p[,-1]
 image(p)
 ```
-
