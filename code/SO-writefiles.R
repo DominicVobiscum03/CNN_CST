@@ -21,3 +21,8 @@ write.csv(sino, "raw_data/SO-sinogram.csv")
 #backproject sinogram
 FBP <- iradon(sino, XSamples = 64, YSamples = 64, mode = "BF")
 image(matrix(FBP))
+
+#sino2
+sino2 <- radon(pic, ThetaSamples = 182)
+sino2 <- as.matrix(sino2$rData)
+write.csv(sino2, "raw_data/SO-sinogram-182.csv")
