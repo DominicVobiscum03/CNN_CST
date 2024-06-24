@@ -6,12 +6,12 @@ library(imager)
 
 #Read in the Sinograms
 #Filter 1 total
-filt1 <- read.csv("raw_data/filtsinoa-final-SO.csv")
+filt1 <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa-final-SO.csv")
 filt1 <- as.matrix(filt1)
 image(filt1)
 
 #Filter 2 total
-filt2 <- read.csv("raw_data/filtsinob-final-SO.csv")
+filt2 <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob-final-SO.csv")
 filt2 <- as.matrix(filt2)
 image(filt2)
 
@@ -36,8 +36,8 @@ image(filt2data)
 
 
 # Read in the biases
-m1 <- as.matrix(read.csv("raw_data/m1-SO-2.csv"))
-m2 <- as.matrix(read.csv("raw_data/m2-SO-2.csv"))
+m1 <- as.matrix(read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m1-SO-2.csv"))
+m2 <- as.matrix(read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m2-SO-2.csv"))
 
 b1 <- matrix(m1[1,1], 64, 64)
 b2 <- matrix(m1[1,2], 64, 64)
@@ -263,12 +263,12 @@ write.csv(filtf, "clean_data/FBP1-SO-2.csv")
 #Read in the Sinograms
 
 #Filter 1 first half (left)
-filt1a <- read.csv("raw_data/filtsinoa2-SO.csv")
+filt1a <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2-SO.csv")
 filt1a <- as.matrix(filt1a[1:91,])
 image(filt1a)
 
 #Filter 1 second half (right)
-filt1b <- read.csv("raw_data/filtsinoa2b-SO.csv")
+filt1b <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2b-SO.csv")
 filt1b <- as.matrix(filt1b[92:182,]) #CHANGED TO 92:182
 image(filt1b)
 
@@ -278,12 +278,12 @@ filt1comb <- as.matrix(filt1comb)
 image(filt1comb)
 
 #Filter 2 left half
-filt2a <- read.csv("raw_data/filtsinob2-SO.csv")
+filt2a <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2-SO.csv")
 filt2a <- as.matrix(filt2a[1:91,])
 image(filt2a)
 
 #Filter 2 right half
-filt2b <- read.csv("raw_data/filtsinob2b-SO.csv")
+filt2b <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2b-SO.csv")
 filt2b <- as.matrix(filt2b[92:182,])
 image(filt2b)
 
@@ -305,8 +305,8 @@ filt2totdata <- FBP2tot$irData
 image(filt2totdata)
 
 # Read in the biases
-m1 <- as.matrix(read.csv("raw_data/m1-SO-2.csv"))
-m2 <- as.matrix(read.csv("raw_data/m2-SO-2.csv"))
+m1 <- as.matrix(read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m1-SO-2.csv"))
+m2 <- as.matrix(read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m2-SO-2.csv"))
 
 b1 <- matrix(m1[1,1], 64, 64)
 b2 <- matrix(m1[1,2], 64, 64)

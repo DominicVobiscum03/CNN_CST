@@ -25,7 +25,7 @@ library(OpenImageR)
 ## Read in data 
 ```{r}
 # read in reference data
-m <- read_csv("raw_data/SO-pic.csv")
+m <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
 m <- m[, -c(1)]
 
 # Replace 0.001 with 0
@@ -58,14 +58,14 @@ for (i in 1:ncol(v)){
 xv<- as.vector(as.numeric(x))
 zv<- as.vector(as.numeric(z))
 xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
-zv <- -1*(zv-(max(zv)+1)/2) # origin referenced coordinates  
+zv <- (zv-(max(zv)+1)/2) # origin referenced coordinates  #TOOK OUT -1*
 ```
 
 
 ## Train neural net
 ```{r}
 # read in sinogram data
-sino <- read.csv('raw_data/SO-sinogram-182.csv')
+sino <- read.csv('C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-sinogram-182.csv')
 ranges <- sino[,c(1)]
 sino <- sino[, -c(1)]
 # number of projections
@@ -161,9 +161,9 @@ filt_sinoA2 %>%
 
 filt_sinoA_final <- cbind(filt_sinoA, filt_sinoA2)
   
-write_csv(filt_sinoA, "raw_data/filtsinoa2-SO.csv")
-write_csv(filt_sinoA2, "raw_data/filtsinoa2b-SO.csv")
-write_csv(filt_sinoA_final, "raw_data/filtsinoa-final-SO.csv")
+write_csv(filt_sinoA, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2-SO.csv")
+write_csv(filt_sinoA2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2b-SO.csv")
+write_csv(filt_sinoA_final, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa-final-SO.csv")
 
 
 for(val in 1:number_cols){
@@ -179,12 +179,12 @@ filt_sinoB2 %>%
 
 filt_sinoB_final <- cbind(filt_sinoB, filt_sinoB2)
 
-write_csv(filt_sinoB, "raw_data/filtsinob2-SO.csv")
-write_csv(filt_sinoB2, "raw_data/filtsinob2b-SO.csv")
-write_csv(filt_sinoB_final, "raw_data/filtsinob-final-SO.csv")
+write_csv(filt_sinoB, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2-SO.csv")
+write_csv(filt_sinoB2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2b-SO.csv")
+write_csv(filt_sinoB_final, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob-final-SO.csv")
 
-write_csv(m1, "raw_data/m1-SO-2.csv")
-write_csv(m2, "raw_data/m2-SO-2.csv")
+write_csv(m1, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m1-SO-2.csv")
+write_csv(m2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m2-SO-2.csv")
 ```
 
 ## Read in the FBP image!!!
