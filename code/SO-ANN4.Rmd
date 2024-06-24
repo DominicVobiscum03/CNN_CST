@@ -1,14 +1,12 @@
 ---
-title: "SO-ANN2"
+title: "SO-ANN4"
 author: "Sydney Olander"
-date: "2024-06-10"
+date: "2024-06-18"
 output: html_document
 ---
-
 ## Create working directory
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir=normalizePath(".."))
 ```
 
 ## Load libraries
@@ -22,8 +20,14 @@ library(pracma)
 library(OpenImageR)
 ```
 
+## Set WD
+```{r}
+setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
+```
+
 ## Read in data 
 ```{r}
+setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
 # read in reference data
 m <- read_csv("raw_data/SO-pic.csv")
 m <- m[, -c(1)]
@@ -64,8 +68,9 @@ zv <- -1*(zv-(max(zv)+1)/2) # origin referenced coordinates
 
 ## Train neural net
 ```{r}
+setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
 # read in sinogram data
-sino <- read.csv('raw_data/SO-sinogram.csv')
+sino <- read.csv('raw_data/SO-sinogram-182.csv')
 ranges <- sino[,c(1)]
 sino <- sino[, -c(1)]
 # number of projections
@@ -136,110 +141,34 @@ m2 <- m2 %>% as.data.frame()
 
 ```
 
-
-
-```{r}
-filt_sinoA <- sino
-filt_sinoB <- sino
-#filt_sinoC <- sino
-#filt_sinoD <- sino
-nRows <- nrow(sino)
-
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoA[val,s] <- m1[1+val,1]*sino[val,s]
-  }
-}
-
-filt_sinoA %>% 
-  as.matrix()
-
-write_csv(filt_sinoA, "raw_data/filtsinoa-SO.csv")
-
-
-for(val in 1:nRows){
-  for(s in 1:length(sino[val,])){
-    filt_sinoB[val,s] <- m1[1+val,2]*sino[val,s]
-  }
-}
-
-filt_sinoB %>% 
-  as.matrix()
-
-write_csv(filt_sinoB, "raw_data/filtsinob-SO.csv")
-
-#for(val in 1:nRows){
- # for(s in 1:length(sino[val,])){
- #   filt_sinoC[val,s] <- m1[1+val,3]*sino[val,s]
-#  }
-#}
-
-#filt_sinoC %>% 
- # as.matrix()
-
-#write_csv(filt_sinoC, "raw_data/filtsinoc-SO.csv")
-
-
-write_csv(m1, "raw_data/m1-SO.csv")
-write_csv(m2, "raw_data/m2-SO.csv")
-
-```
-
 ##Convolve function version
 ```{r}
-filt_sinoA <- sino
-filt_sinoA2 <- sino
-filt_sinoB <- sino
-filt_sinoB2 <- sino
-number_cols <- ncol(sino)
+setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
 
-#filt_sinoA <- cbind(filt_sinoA, matrix(0, nrow = 181, 90))
-#sino <-cbind(sino, matrix(0, nrow = 181, 90))
+m1_transposed <- t(m1[2:92,])
 
-            
-for(val in 1:number_cols){
-                    filt_sinoA[1:91,val] <- convolve(sino[1:91,val], m1[2:92,1], type ="circular")
-                    filt_sinoA2[91:181, val] <- convolve(sino[91:181, val], m1[2:92, 1], type = "circular")
+# Initialize matrices for filtered sinogram data
+filt_sinoA <- matrix(0, nrow = nrow(sino), ncol = ncol(sino))
+filt_sinoB <- matrix(0, nrow = nrow(sino), ncol = ncol(sino))
+
+# Perform row-wise convolution using each row of m1_transposed as a kernel
+for (i in 1:nrow(sino)) {
+  filt_sinoA[i, ] <- convolve(sino[i, ], m1_transposed[1, ], type = "circular")
+  filt_sinoB[i, ] <- convolve(sino[i, ], m1_transposed[2, ], type = "circular")
 }
+
+# Now filt_sinoA and filt_sinoB contain the results of row-wise convolution with m1_transposed[1, ] and m1_transposed[2, ] respectively
 
 filt_sinoA %>% 
   as.matrix()
-
-filt_sinoA2 %>% 
-  as.matrix()
-
-filt_sinoA_final <- cbind(filt_sinoA, filt_sinoA2)
   
 write_csv(filt_sinoA, "raw_data/filtsinoa2-SO.csv")
-write_csv(filt_sinoA2, "raw_data/filtsinoa2b-SO.csv")
-write_csv(filt_sinoA_final, "raw_data/filtsinoa-final-SO.csv")
-
-
-for(val in 1:number_cols){
-                   filt_sinoB[1:91,val] <- convolve(sino[1:91,val], m1[2:92,2], type = "circular") 
-                   filt_sinoB2[91:181, val] <- convolve(sino[91:181, val], m1[2:92, 2], type = "circular")
-} #removed m1[1:91,2]
 
 filt_sinoB %>% 
   as.matrix()
 
-filt_sinoB2 %>%
-  as.matrix()
-
-filt_sinoB_final <- cbind(filt_sinoB, filt_sinoB2)
-
 write_csv(filt_sinoB, "raw_data/filtsinob2-SO.csv")
-write_csv(filt_sinoB2, "raw_data/filtsinob2b-SO.csv")
-write_csv(filt_sinoB_final, "raw_data/filtsinob-final-SO.csv")
 
 write_csv(m1, "raw_data/m1-SO-2.csv")
 write_csv(m2, "raw_data/m2-SO-2.csv")
-```
-
-## Read in the FBP image!!!
-```{r}
- p <- read.csv("clean_data/FBP1-SO.csv")
-p <- p %>% as.matrix()
-p <- p[,-1]
-image(p)
 ```

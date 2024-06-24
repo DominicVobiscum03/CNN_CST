@@ -1,5 +1,6 @@
 library(PET)
 library(png)
+library(imager)
 
 ##Pre-combined
 
@@ -136,7 +137,7 @@ image(filt1a)
 
 #Filter 1 second half (right)
 filt1b <- read.csv("raw_data/filtsinoa2b-SO.csv")
-filt1b <- as.matrix(filt1b[91:181,])
+filt1b <- as.matrix(filt1b[92:182,])
 image(filt1b)
 
 image(filt1a+filt1b)
@@ -148,7 +149,7 @@ image(filt2a)
 
 #Filter 2 right half
 filt2b <- read.csv("raw_data/filtsinob2b-SO.csv")
-filt2b <- as.matrix(filt2b[91:181,])
+filt2b <- as.matrix(filt2b[92:182,])
 image(filt2b)
 
 image(filt2a + filt2b)
@@ -268,10 +269,8 @@ image(filt1a)
 
 #Filter 1 second half (right)
 filt1b <- read.csv("raw_data/filtsinoa2b-SO.csv")
-filt1b <- as.matrix(filt1b[91:181,])
+filt1b <- as.matrix(filt1b[92:182,]) #CHANGED TO 92:182
 image(filt1b)
-
-image(filt1a+filt1b)
 
 #combine filter 1
 filt1comb <- rbind(filt1a, filt1b)
@@ -285,10 +284,8 @@ image(filt2a)
 
 #Filter 2 right half
 filt2b <- read.csv("raw_data/filtsinob2b-SO.csv")
-filt2b <- as.matrix(filt2b[91:181,])
+filt2b <- as.matrix(filt2b[92:182,])
 image(filt2b)
-
-image(filt2a + filt2b)
 
 #combine filter 2
 filt2comb <- rbind(filt2a, filt2b)
@@ -365,7 +362,8 @@ for (i in 1:nrow(filts3)){
 
 
 image(filtf2)
+heatmap(filtf2,Rowv=NA,Colv=NA,col=paste("gray",1:99,sep=""))
 
 
-write.csv(filtf, "clean_data/FBP1-SO-2.csv")
+write.csv(filtf2, "clean_data/FBP1-SO-2.csv")
 
