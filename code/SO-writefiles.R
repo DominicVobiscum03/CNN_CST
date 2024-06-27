@@ -24,9 +24,9 @@ write.csv(sino, "raw_data/SO-sinogram.csv")
 #image(FBP)
 
 #Create sinogram with specified number of angles (just change ThetaSamples)
-sino2 <- radon(pic, ThetaSamples = 181)
+sino2 <- radon(pic, ThetaSamples = 182)
 sino2 <- as.matrix(sino2$rData)
-write.csv(sino2, "raw_data/SO-sinogram-181.csv")
+write.csv(sino2, "raw_data/SO-sinogram-182.csv")
 
 
 image(pic, col = gray.colors(64)) 

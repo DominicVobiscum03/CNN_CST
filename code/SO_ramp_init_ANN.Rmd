@@ -25,34 +25,63 @@ library(OpenImageR)
 ## Read in data 
 ```{r}
 # read in reference data
-m <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
-m <- m[, -c(1)]
+#m <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
+#m <- m[, -c(1)]
 
-v <- matrix(nrow = 3, ncol = 0)
+#v <- matrix(nrow = 3, ncol = 0)
 # Populate 'v' with columns, rows, and values from 'm'
-for (i in 1:nrow(m)){
-  for (j in 1:ncol(m)){
-    v <- cbind(v, c(i,j,m[i,j]))
-  }
-}
+#for (i in 1:nrow(m)){
+  #for (j in 1:ncol(m)){
+  #  v <- cbind(v, c(i,j,m[i,j]))
+  #}
+#}
 
 # Create empty vectors `x`, `z`, and 'output'
-x <- vector(length = 0) 
-z <- vector(length = 0)
-output <- vector(length = 0)
+#x <- vector(length = 0) 
+#z <- vector(length = 0)
+#output <- vector(length = 0)
 
 # Extract values from each row of `v`
-for (i in 1:ncol(v)){ 
-     x <- c(x, v[2, i])
-     z <- c(z, v[1, i])
-     output <- c(output, v[3, i]) 
-}
-xv<- as.vector(as.numeric(x))
-zv<- as.vector(as.numeric(z))
-xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
-zv <- (zv-(max(zv)+1)/2) # origin referenced coordinates  #TOOK OUT -1*
+#for (i in 1:ncol(v)){ 
+#     x <- c(x, v[2, i])
+#     z <- c(z, v[1, i])
+#     output <- c(output, v[3, i]) 
+#}
+#xv<- as.vector(as.numeric(x))
+#zv<- as.vector(as.numeric(z))
+#xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
+#zv <- (zv-(max(zv)+1)/2) # origin referenced coordinates  #TOOK OUT -1*
 ```
 
+## Karten's version of prepping data
+```{r}
+# read in reference data
+m<-array(rep(NaN, 1*64*64),dim=c(1,64,64))
+
+im1 <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
+m[1,,] <- as.matrix(im1[, -c(1)])
+
+
+xv<-matrix(rep(NaN,dim(m)[2]^2),1,dim(m)[2]^2)
+zv<-xv
+output<-xv
+
+for(k in 1:dim(m)[1])
+{
+  # Populate 'v' with columns, rows, and values from 'm'
+  count=1
+  for (i in 1:ncol(m[k,,])){
+    for (j in 1:nrow(m[k,,])){
+      xv[k,count]<-i
+      zv[k,count]<-j
+      output[k,count]<-m[k,j,i]
+      count<-count+1
+    }
+  }
+  xv[k,] <- (xv[k,]-max(xv[k,])/2) # make x and z correct for the shift flip sum code
+  zv[k,] <- (zv[k,]-max(zv[k,])/2) # origin referenced coordinates
+}
+```
 
 ## Train neural net
 ```{r}
