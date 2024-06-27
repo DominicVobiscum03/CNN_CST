@@ -19,10 +19,14 @@ write.csv(sino, "raw_data/SO-sinogram.csv")
 
 
 #backproject sinogram
-FBP <- iradon(sino, XSamples = 64, YSamples = 64, mode = "BF")
-image(matrix(FBP))
+#FBP <- iradon(sino, XSamples = 64, YSamples = 64, mode = "BF")
+#image(as.matrix(FBP))
+#image(FBP)
 
-#sino2
-sino2 <- radon(pic, ThetaSamples = 182)
+#Create sinogram with specified number of angles (just change ThetaSamples)
+sino2 <- radon(pic, ThetaSamples = 181)
 sino2 <- as.matrix(sino2$rData)
-write.csv(sino2, "raw_data/SO-sinogram-182.csv")
+write.csv(sino2, "raw_data/SO-sinogram-181.csv")
+
+
+image(pic, col = gray.colors(64)) 

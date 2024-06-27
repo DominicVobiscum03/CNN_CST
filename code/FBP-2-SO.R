@@ -1,6 +1,5 @@
 library(PET)
 library(png)
-library(imager)
 
 ##Pre-combined
 
@@ -260,6 +259,9 @@ write.csv(filtf, "clean_data/FBP1-SO-2.csv")
 
 ##Separate convolutions
 
+library(PET)
+library(png)
+
 #Read in the Sinograms
 
 #Filter 1 first half (left)
@@ -347,6 +349,7 @@ filtsb2 <- filtsb2*w2
 filts2 <- filtsa2 + filtsb2
 image(filts2)
 
+
 #Remove last bias
 filts3 <- filts2 - bf
 filts3
@@ -366,4 +369,3 @@ heatmap(filtf2,Rowv=NA,Colv=NA,col=paste("gray",1:99,sep=""))
 
 
 write.csv(filtf2, "clean_data/FBP1-SO-2.csv")
-
