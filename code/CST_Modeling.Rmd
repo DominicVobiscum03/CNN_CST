@@ -71,8 +71,8 @@ SourceNZ<- 2 # number of source sub-positions in Z dimension
 Define number of detectors and their positions.  For initial calculations space the detectors evenly along the x-axis with the source
 
 ```{r}
-ndet <- 12 # number of gamma-ray detectors in array
-det_dist <- 1.0e+0 # separation in cm of the first detector from the source and between the remaining detectors in the array
+ndet <- 115 # number of gamma-ray detectors in array
+det_dist <- 0.5e+0 # separation in cm of the first detector from the source and between the remaining detectors in the array
 det_x <- t(tibble ( seq(1,ndet)*det_dist )) # x dimension of detector array locations
 det_r <- 0.254 # set the radius of the detector face in cm
 ```
@@ -129,6 +129,8 @@ X <- data.frame(X = (seq(0,NX-1)+0.5
 X$Z <- X$X
 
 image( Image_plane )
+
+write.csv(Image_plane, "C:/Users/sumloan/Documents/original.csv")
 ```
 
 For each nonzero pixel in image plane, compute position (in cm) scattering angle (in degrees), its cosine and the energy E' (in keV) of the scattered gamma ray
@@ -163,7 +165,7 @@ for (i in 1:NX){
                                       # source through pixel into detector
         Int_prob[i,j,k] <- pwidth*Al$edens*KN_xs*1e-24*p_SA                                                                  *d_SA*sp_dist/(4*pi*X$Z[j]) # Scattering probability from
                                       # source through pixel into detector
-        Events[i,j,k] <- Int_prob[i,j,k] * Em_rate*Count_time
+        #Events[i,j,k] <- Int_prob[i,j,k] * Em_rate*Count_time
       
       }
     }
@@ -234,6 +236,6 @@ ScatterMat <- ScatGram %>%
 ScatterImg <- ScatterMat %>%
   image()
 
-write_csv(ScatGram, "ScatterMat.csv")
+write_csv(ScatGram, "raw_data/ScatterMat.csv")
 ```
 
