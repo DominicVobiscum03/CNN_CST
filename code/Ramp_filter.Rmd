@@ -1,0 +1,115 @@
+---
+title: "Ramp Filter"
+author: "Sydney Olander"
+date: "2024-06-18"
+output: html_document
+---
+## Create working directory
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
+```
+
+## Load libraries
+```{r}
+library(neuralnet)
+library(tidyverse)
+library(binhf)
+library(Matrix)
+library(ggplot2)
+library(pracma)
+library(OpenImageR)
+```
+
+## Read in data 
+```{r}
+setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
+# read in reference data
+m <- read_csv("raw_data/SO-pic.csv")
+m <- m[, -c(1)]
+
+v <- matrix(nrow = 3, ncol = 0)
+# Populate 'v' with columns, rows, and values from 'm'
+for (i in 1:nrow(m)){
+  for (j in 1:ncol(m)){
+    v <- cbind(v, c(i,j,m[i,j]))
+  }
+}
+
+# Create empty vectors `x`, `z`, and 'output'
+x <- vector(length = 0) 
+z <- vector(length = 0)
+output <- vector(length = 0)
+
+# Extract values from each row of `v`
+for (i in 1:ncol(v)){ 
+     x <- c(x, v[2, i])
+     z <- c(z, v[1, i])
+     output <- c(output, v[3, i]) 
+}
+xv<- as.vector(as.numeric(x))
+zv<- as.vector(as.numeric(z))
+xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
+zv <- -1*(zv-(max(zv)+1)/2) # origin referenced coordinates  
+```
+
+## Ramp filter
+```{r}
+# read in sinogram data
+sino <- read.csv('C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-sinogram-182.csv')
+ranges <- sino[,c(1)]
+sino <- sino[, -c(1)]
+# number of projections
+nAngle  <- nrow(sino)
+# number of detectors
+nDetect <- ncol(sino)
+# Degrees between projections
+angleStep <- 180/(nAngle) # changed from nAngle-1
+# compute angle of each projection in sinogram
+degree <- data.frame(angle = seq(0,nAngle-1)*angleStep) 
+
+#sinos <- array(rep(NaN,1*181*91),dim=c(1,181,91))
+
+# read in sinogram data
+#sinos[1,,] <- as.matrix(sino)
+
+# initialize weights
+nn <- list()
+nn$weights <- list()
+
+nn$weights[[1]] <- matrix(0, nrow = 92, ncol = 1)
+
+mid <- (nDetect + 1)/2
+delta_p <- 1/(nDetect - mid)
+nn$weights <- rep(0,92)
+
+for (i in seq(from=2, to=length(nn$weights), by=2)){
+  n = i-mid-1
+  nn$weights[i] <- -1/(n^2*pi^2*delta_p^2)
+}
+
+nn$weights[mid+1] <- 1/(4*((delta_p)^2))
+
+nn$weights[is.na(nn$weights)] <- 0
+nn$weights <- circshift(as.vector(nn$weights), -mid) # shift filter peak to 1
+```
+
+##Write weights into a file to be used as initial weights in neural network
+```{r}
+m1 <- nn$weights|> as.vector()
+
+write_csv(as.data.frame(m1), "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/initial_rampweights.csv")
+```
+
+
+##Convolve ramp filter
+```{r}
+sino <- as.matrix(sino)
+filt_sinoA <- sino
+
+for(val in 1:nrow(sino)){
+                    filt_sinoA[val,] <- convolve(as.numeric(sino[val,]), m1[2:92], type ="circular")
+}
+
+write_csv(as.data.frame(filt_sinoA), "raw_data/rampsino.csv")
+```

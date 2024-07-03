@@ -1,0 +1,204 @@
+---
+title: "ANN"
+author: "Karsten and Slakes"
+date: "2023-06-28"
+output: html_document
+---
+
+Create working directory
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir='Z:/Research/ANN Work')
+```
+
+
+
+Load libraries
+```{r}
+library(neuralnet)
+library(tidyverse)
+library(binhf)
+library(Matrix)
+library(ggplot2)
+library(pracma)
+library(OpenImageR)
+```
+
+read in .csv of reference image and pass reference pixel value/location into a 'output' vector and 'x' and 'z' vectors. 
+
+```{r}
+im_files <- list.files("C:\\Users\\sumloan\\Downloads\\dataset_for_reconstruction-master\\dataset_for_reconstruction-master\\dataset4\\training\\GT_png_500")
+
+# read in reference data
+m<-array(rep(NaN, length(im_files)*300*300),dim=c(length(im_files),300,300))
+
+for (t in 1:length(im_files))
+{
+  m[t,,]<-readImage(paste("C:\\Users\\sumloan\\Downloads\\dataset_for_reconstruction-master\\dataset_for_reconstruction-master\\dataset4\\training\\GT_png_500\\",im_files[t],sep=""))
+}
+
+xv<-matrix(rep(NaN,length(im_files)*dim(m)[2]^2),length(im_files),dim(m)[2]^2)
+zv<-xv
+output<-xv
+
+for(k in 1:dim(m)[1])
+{
+  # Populate 'v' with columns, rows, and values from 'm'
+  count=1
+  for (i in 1:ncol(m[k,,])){
+    for (j in 1:nrow(m[k,,])){
+      xv[k,count]<-i
+      zv[k,count]<-j
+      output[k,count]<-m[k,j,i]
+      count<-count+1
+    }
+  }
+  xv[k,] <- (xv[k,]-max(xv[k,])/2) # make x and z correct for the shift flip sum code
+  zv[k,] <- (zv[k,]-max(zv[k,])/2) # origin referenced coordinates
+}
+```
+
+
+
+Train neural net
+```{r}
+normal <- function(p) {
+  return ((p - min(p)) / (max(p) - min(p)))
+}
+nguyen_widrow_init <- function(weights, a = -0.5, b = 0.5) {
+  n <- nrow(weights)
+  m <- ncol(weights)
+  beta <- 0.7 * m^(1/n)
+  
+  norms <- sqrt(rowSums(weights^2))
+  norms[norms == 0] <- 1  # Avoid division by zero
+  
+  for (i in 1:n) {
+    weights[i, ] <- beta * weights[i, ] / norms[i]
+  }
+  
+  return(weights)
+}
+
+im_files2 <- list.files("C:\\Users\\sumloan\\Downloads\\dataset_for_reconstruction-master\\dataset_for_reconstruction-master\\dataset4\\training\\sinogram_500")
+
+sinos <-array(rep(NaN, length(im_files2)*300*300),dim=c(length(im_files2),300,300))
+
+for (t in 1:length(im_files2))
+{
+  sinos[t,,]<-readImage(paste("C:\\Users\\sumloan\\Downloads\\dataset_for_reconstruction-master\\dataset_for_reconstruction-master\\dataset4\\training\\sinogram_500\\",im_files2[t],sep=""))
+}
+
+# initialize weights
+nn <- list()
+nn$weights <- list()
+set.seed(222) 
+nn$weights[[1]] <- matrix(runif(602,min=0,max=0.01), nrow = 301, ncol = 2)
+nn$weights[[1]] <- nguyen_widrow_init(nn$weights[[1]])
+nn$weights[[2]] <- matrix(runif(3,min=0,max=1), nrow = 3, ncol = 1)
+nn$weights[[2]] <- nguyen_widrow_init(nn$weights[[2]])
+error <- matrix(Inf,nrow = 4, ncol = dim(output)[2])
+
+for(imnum in 1:dim(sinos)[1])
+{
+  # number of projections
+  nAngle  <- nrow(sinos[imnum,,])
+  # number of detectors
+  nDetect <- ncol(sinos[imnum,,])
+  # Degrees between projections
+  angleStep <- 180/(nAngle) # changed from nAngle-1
+  # compute angle of each projection in sinogram
+  degree <- data.frame(angle = seq(0,nAngle-1)*angleStep +1) 
+  run = TRUE
+  for (i in 1:length(output[imnum,])){
+    # compute shift of sinogram detector positions for each projection based on current image pixel
+    degree$pixel <- round(xv[imnum,i]*cos(pi*degree$angle/180) + zv[imnum,i]*sin(pi*degree$angle/180))
+    # create a space with dimension sino
+    ssino <- sinos[imnum,,]   
+    ######################################################## SHIFT SUM FLIP 
+    # Perform shift according to degree$pixel
+    for (j in 1:nAngle){ 
+      shift_amount <- -1*degree$pixel[j]
+      shifted_row <- circshift(as.vector(sinos[imnum,j, ]), shift_amount)
+      ssino[j, ] <- shifted_row
+    }
+    # perform summation
+    f_vector <- colSums(ssino) 
+    # perform flip
+    z_vector <- rev(f_vector)  
+    ################################################################## DATA
+    data <- t(as_tibble(c(unlist(z_vector,use.names=FALSE), unlist(output[i],use.names=FALSE))))
+    # Define names of the columns for the data to used by function 
+    ANN_names <- c(paste0("z",(as.character(c(seq(1:nDetect))))),"o") 
+    colnames(data) <- ANN_names
+    ############################################################### FORMULA
+    f <- as.formula(paste(ANN_names[nDetect+1],
+                         "~",
+                         paste(ANN_names[!ANN_names %in% "o"], collapse = " + ")
+                         )
+                   ) 
+    ############################################################ NEURAL NET
+    nn <-neuralnet(f, data, hidden = 2,
+                  startweights = nn$weights)
+    error[imnum,i] <- nn$result.matrix[1]
+    if(error[imnum,i]==min(error)){
+      m1b <- nn$weights[[1]][[1]]
+      m2b <- nn$weights[[1]][[2]]
+      m1b <- m1b %>% as.data.frame()
+      m2b <- m2b %>% as.data.frame()
+    }
+  }
+}
+
+# Creating matrices 'm1' which contains the weights from the first layer and 'm2' which contains the
+# weights from the second layer
+m1 <- nn$weights[[1]][[1]]
+m2 <- nn$weights[[1]][[2]]
+m1 <- m1 %>% as.data.frame()
+m2 <- m2 %>% as.data.frame()
+```
+
+```{r}
+filt_sinoA <- sinos[1,,]
+filt_sinoB <- sinos[1,,]
+image(sinos[1,,])
+
+for(val in 1:nrow(sinos[1,,])){
+                    filt_sinoA[val,] <- convolve(sinos[1,val,], m1[2:301,1], type ="circular")
+}
+write_csv(as.data.frame(filt_sinoA), "raw_data/filtsinoa.csv")
+image(as.matrix(filt_sinoA))
+
+for(val in 1:nrow(sinos[1,,])){
+                    filt_sinoB[val,] <- -convolve(sinos[1,val,], m1[2:301,2], type ="circular")
+}
+write_csv(as.data.frame(filt_sinoB), "raw_data/filtsinob.csv")
+image(as.matrix(filt_sinoB))
+
+write_csv(m1, "raw_data/m1.csv")
+write_csv(m2, "raw_data/m2.csv")
+
+```
+
+
+Read in the FBP image!!!
+
+```{r}
+ p <- read.csv("clean_data/FBP1.csv")
+p <- p %>% as.matrix()
+p <- p[,-c(1)]
+image(p)
+```
+```{r}
+image(as.matrix(m))
+mse = 0
+for(a in 1:nrow(p))
+  for(b in 1:ncol(p))
+  {
+    mse <- mse + (m[a,b]-p[a,b])^2
+  }
+mse <- mse/(nrow(p)*ncol(p))
+mse
+```
+
+
