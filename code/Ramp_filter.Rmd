@@ -7,6 +7,7 @@ output: html_document
 ## Create working directory
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir=normalizePath(".."))
 ```
 
 ## Load libraries
@@ -18,11 +19,6 @@ library(Matrix)
 library(ggplot2)
 library(pracma)
 library(OpenImageR)
-```
-
-## Set WD
-```{r}
-setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
 ```
 
 ## Read in data 
@@ -72,7 +68,7 @@ angleStep <- 180/(nAngle) # changed from nAngle-1
 # compute angle of each projection in sinogram
 degree <- data.frame(angle = seq(0,nAngle-1)*angleStep) 
 
-sinos <- array(rep(NaN,1*181*91),dim=c(1,181,91))
+#sinos <- array(rep(NaN,1*181*91),dim=c(1,181,91))
 
 # read in sinogram data
 #sinos[1,,] <- as.matrix(sino)
@@ -108,12 +104,11 @@ write_csv(as.data.frame(m1), "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_da
 
 ##Convolve ramp filter
 ```{r}
-setwd("C:/Users/sumloan/Documents/ANN_work/CNN_CST")
 sino <- as.matrix(sino)
 filt_sinoA <- sino
 
 for(val in 1:nrow(sino)){
-                    filt_sinoA[val,] <- convolve(sino[val,], m1[2:92], type ="circular")
+                    filt_sinoA[val,] <- convolve(as.numeric(sino[val,]), m1[2:92], type ="circular")
 }
 
 write_csv(as.data.frame(filt_sinoA), "raw_data/rampsino.csv")

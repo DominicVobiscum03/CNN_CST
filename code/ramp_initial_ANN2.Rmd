@@ -1,7 +1,7 @@
 ---
-title: "ANN-rampinitialized"
+title: "ramp_initial_ANN2"
 author: "Sydney Olander"
-date: "2024-06-26"
+date: "2024-06-27"
 output: html_document
 ---
 
@@ -24,12 +24,19 @@ library(OpenImageR)
 
 ## Read in data 
 ```{r}
-# Read in reference data
+# read in reference data
 m <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
 m <- m[, -c(1)]
 
-v <- matrix(nrow = 3, ncol = 0)
+# Replace 0.001 with 0
+for(x in 1:ncol(m)){
+  for(y in 1:nrow(m)){
+    if(m[x,y]==0.001)
+      m[x,y] <- 0
+  }
+}
 
+v <- matrix(nrow = 3, ncol = 0)
 # Populate 'v' with columns, rows, and values from 'm'
 for (i in 1:nrow(m)){
   for (j in 1:ncol(m)){
@@ -54,35 +61,6 @@ xv <- (xv-(max(xv)+1)/2) # make x and z correct for the shift flip sum code
 zv <- (zv-(max(zv)+1)/2) # origin referenced coordinates  #TOOK OUT -1*
 ```
 
-## Karten's version of prepping data
-```{r}
-# read in reference data
-m<-array(rep(NaN, 1*64*64),dim=c(1,64,64))
-
-im1 <- read_csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/SO-pic.csv")
-m[1,,] <- as.matrix(im1[, -c(1)])
-
-
-xv<-matrix(rep(NaN,dim(m)[2]^2),1,dim(m)[2]^2)
-zv<-xv
-output<-xv
-
-for(k in 1:dim(m)[1])
-{
-  # Populate 'v' with columns, rows, and values from 'm'
-  count=1
-  for (i in 1:ncol(m[k,,])){
-    for (j in 1:nrow(m[k,,])){
-      xv[k,count]<-i
-      zv[k,count]<-j
-      output[k,count]<-m[k,j,i]
-      count<-count+1
-    }
-  }
-  xv[k,] <- (xv[k,]-max(xv[k,])/2) # make x and z correct for the shift flip sum code
-  zv[k,] <- (zv[k,]-max(zv[k,])/2) # origin referenced coordinates
-}
-```
 
 ## Train neural net
 ```{r}
@@ -102,13 +80,13 @@ degree <- data.frame(angle = seq(0,nAngle-1)*angleStep)
 # initialize weights
 nn <- list()
 nn$weights <- list()
+ramp_weights <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/initial_rampweights.csv")
 
-set.seed(222)
-weights <- read.csv("C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/initial_rampweights.csv")
-nn$weights[[1]] <- weights
+set.seed(222) 
+nn$weights[[1]] <- ramp_weights
 nn$weights[[2]] <- matrix(runif(1,min=0,max=3), nrow = 5, ncol = 1)
 
-error <- matrix(nrow = 1, ncol = 0) 
+error <- matrix(nrow = 1, ncol = 0)
 for (i in 1:length(output)){
   # compute shift of sinogram detector positions for each projection based on current image pixel
   degree$pixel <- round(xv[i]*cos(pi*degree$angle/180) + zv[i]*sin(pi*degree$angle/180))
@@ -160,14 +138,16 @@ m2 <- m2 %>% as.data.frame()
 
 ```
 
-##Convolve old way
+##Convolve function version
 ```{r}
 filt_sinoA <- sino
 filt_sinoA2 <- sino
 filt_sinoB <- sino
 filt_sinoB2 <- sino
 number_cols <- ncol(sino)
-number_rows <- nrow(sino)
+
+#filt_sinoA <- cbind(filt_sinoA, matrix(0, nrow = 181, 90))
+#sino <-cbind(sino, matrix(0, nrow = 181, 90))
 
             
 for(val in 1:number_cols){
@@ -180,15 +160,18 @@ filt_sinoA %>%
 
 filt_sinoA2 %>% 
   as.matrix()
+
+filt_sinoA_final <- cbind(filt_sinoA, filt_sinoA2)
   
 write_csv(filt_sinoA, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2-SO.csv")
 write_csv(filt_sinoA2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2b-SO.csv")
+write_csv(filt_sinoA_final, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa-final-SO.csv")
 
 
 for(val in 1:number_cols){
                    filt_sinoB[1:91,val] <- convolve(sino[1:91,val], m1[2:92,2], type = "circular") 
                    filt_sinoB2[92:182, val] <- convolve(sino[92:182, val], m1[2:92, 2], type = "circular")
-}
+} #removed m1[1:91,2]
 
 filt_sinoB %>% 
   as.matrix()
@@ -196,42 +179,12 @@ filt_sinoB %>%
 filt_sinoB2 %>%
   as.matrix()
 
+filt_sinoB_final <- cbind(filt_sinoB, filt_sinoB2)
 
 write_csv(filt_sinoB, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2-SO.csv")
 write_csv(filt_sinoB2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2b-SO.csv")
+write_csv(filt_sinoB_final, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob-final-SO.csv")
 
 write_csv(m1, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m1-SO-2.csv")
 write_csv(m2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m2-SO-2.csv")
 ```
-
-##Convolve new way
-```{r}
-filt_sinoA <- sino
-filt_sinoA2 <- sino
-filt_sinoB <- sino
-filt_sinoB2 <- sino
-number_cols <- ncol(sino)
-number_rows <- nrow(sino)
-
-for(val in 1:number_rows){
-                    filt_sinoA[val,] <- convolve(as.numeric(sino[val,]), m1[2:92,1], type ="circular")
-}
-
-filt_sinoA %>% 
-  as.matrix()
-
-write_csv(filt_sinoA, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinoa2-SO.csv")
-
-for(val in 1:number_rows){
-                    filt_sinoB[val,] <- convolve(as.numeric(sino[val,]), m1[2:92,2], type ="circular")
-}
-
-filt_sinoB %>% 
-  as.matrix()
-
-write_csv(filt_sinoB, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/filtsinob2-SO.csv")
-
-write_csv(m1, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m1-SO-2.csv")
-write_csv(m2, "C:/Users/sumloan/Documents/ANN_work/CNN_CST/raw_data/m2-SO-2.csv")
-```
-
