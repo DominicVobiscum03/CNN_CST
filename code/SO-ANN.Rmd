@@ -22,12 +22,7 @@ library(pracma)
 library(OpenImageR)
 ```
 
-read in .csv of reference image and pass reference pixel value/location into a 'output' vector and 'x' and 'z' vectors.
-
-It is important to note that all the "zeros" have the value 0.001. I don't know how this affects the training, but it would be worth getting a new training set with real zeroes and trying.
-
-I have been working to figure out how to train this and have the error print iteratively so we can see if it is improving. I have not figured this out yet.
-
+## Data preparation
 ```{r}
 # read in reference data
 m <- read.csv("raw_data/SO_64ref.csv")
@@ -182,33 +177,41 @@ m2 <- m2 %>% as.data.frame()
 
 
 ```{r}
+#initialize filt_sino for each node
 filt_sinoA <- sino
 filt_sinoB <- sino
 #filt_sinoC <- sino
 #filt_sinoD <- sino
+
+#count rows
 nRows <- nrow(sino)
 
+#apply weights to sinogram
 for(val in 1:nRows){
   for(s in 1:length(sino[val,])){
     filt_sinoA[val,s] <- m1[1+val,1]*sino[val,s]
   }
 }
 
+#turn weighted sinogram into matrix
 filt_sinoA %>% 
   as.matrix()
 
+#write weighted sinogram to file
 write_csv(filt_sinoA, "raw_data/filtsinoa-SO.csv")
 
-
+#apply weights to sinogram
 for(val in 1:nRows){
   for(s in 1:length(sino[val,])){
     filt_sinoB[val,s] <- m1[1+val,2]*sino[val,s]
   }
 }
 
+#turn weighted sinogram into matrix
 filt_sinoB %>% 
   as.matrix()
 
+#write weighted sinogram to file
 write_csv(filt_sinoB, "raw_data/filtsinob-SO.csv")
 
 #for(val in 1:nRows){
@@ -222,7 +225,7 @@ write_csv(filt_sinoB, "raw_data/filtsinob-SO.csv")
 
 #write_csv(filt_sinoC, "raw_data/filtsinoc-SO.csv")
 
-
+#write weights into files for use in filtered back projection
 write_csv(m1, "raw_data/m1-SO.csv")
 write_csv(m2, "raw_data/m2-SO.csv")
 
